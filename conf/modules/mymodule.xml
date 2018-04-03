@@ -1,0 +1,16 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="mymodule">
+  <doc>
+    <description>this is a test</description>
+  </doc>
+  <header>
+    <file name="mymodule.h"/>
+  </header>
+  <init fun="movewaypoint_init()"/>
+  <event fun="movewaypoint"/>
+  <makefile>
+    <file name="mymodule.c"/>
+  </makefile>
+</module>
+

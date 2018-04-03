@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Gautier Hattenberger <gautier.hattenberger@enac.fr>
+ * Copyright (C) Thomas Fijen
  *
  * This file is part of paparazzi
  *
@@ -18,12 +18,12 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/decawave/dw1000_arduino.c"
- * @author Gautier Hattenberger
- * Driver to get ranging data from Decawave DW1000 modules connected to Arduino
+ * @file "modules/decawave/uwb_dw1000_delft.c"
+ * @author Thomas Fijen
+ * This is a driver to get ranging data from the Decawave DW1000 connected to Arduino. The format of the data recieved over the serial link is: [(byte) START_MARKER, (byte) anchorID, (float) range]. This module is based off of the module 'dw1000_arduino' created by Gautier Hattenberger <gautier.hattenberger@enac.fr>
  */
 
-#include "modules/decawave/dw1000_arduino.h"
+#include "modules/decawave/uwb_dw1000_delft.h"
 
 #include "std.h"
 #include "mcu_periph/uart.h"
@@ -69,37 +69,15 @@
 #define DW1000_TIMEOUT 500
 #endif
 
-/** frame sync byte */
-#define DW_STX 0xFE
-
 /** Parsing states */
-#define DW_WAIT_STX 0
-#define DW_GET_DATA 1
-#define DW_GET_CK 2
-#define DW_NB_DATA 6//6
+//#define DW_WAIT_STX 0
+//#define DW_GET_DATA 1
+//#define DW_GET_CK 2
+#define DW_NB_DATA 5
 
-// Variables that i added, REMOVE THE UNNECESSARY ONES
-//PRINT_CONFIG_VAR(SERIAL_UART)
-//PRINT_CONFIG_VAR(SERIAL_BAUD)
-// define coms link for stereocam
-//#define SERIAL_PORT   (&((SERIAL_UART).device))
-//struct link_device *xdev = SERIAL_PORT;
-
-//#define SerialGetch() SERIAL_PORT ->get_byte(SERIAL_PORT->periph)
-//#define SerialChAvailable()(xdev->char_available(xdev->periph))
-#define END_MARKER 255
 #define START_MARKER 254
 
-//static uint8_t _bytesRecvd = 0;
-//static uint8_t _dataRecvCount = 0;
-//static uint8_t _tempBuffer[MAX_MESSAGE];
-//static uint8_t _tempBuffer2[MAX_MESSAGE];
-//static uint8_t _recvBuffer[FLOAT_SIZE];
-//static uint8_t _dataSendCount = 0;
-//static uint8_t _dataTotalSend = 0;
 static bool _inProgress = false;
-static bool _startFound = false;
-static bool _allReceived = false;
 static uint8_t _varByte = 0;
 
 
@@ -107,8 +85,8 @@ static uint8_t _varByte = 0;
 struct DW1000 {
   uint8_t buf[DW_NB_DATA];    ///< incoming data buffer
   uint8_t idx;                ///< buffer index
-  uint8_t ck;                 ///< checksum
-  uint8_t state;              ///< parser state
+  //uint8_t ck;                 ///< checksum
+  //uint8_t state;              ///< parser state
   float initial_heading;      ///< initial heading correction
   struct Anchor anchors[DW1000_NB_ANCHORS];   ///<anchors data
   struct EnuCoor_f pos;       ///< local pos in anchors frame
@@ -125,39 +103,22 @@ static struct DW1000 dw1000;
 static inline float float_from_buf(uint8_t* b) {
   float f;
   memcpy((uint8_t*)(&f), b, sizeof(float));
-  //memcpy(&f, b, sizeof(float));
   return f;
 }
 
 /** Utility function to get uint16_t from buffer */
 static inline uint16_t uint16_from_buf(uint8_t* b) {
-  uint16_t u16;
+  uint16_t u16 = 0x0000;
   //uint8_t temp;
-  memcpy ((uint8_t*)(&u16), b, sizeof(uint16_t));
+  memcpy ((uint8_t*)(&u16), b, sizeof(uint8_t));
   //memcpy (&temp, b, sizeof(uint8_t));
   //return u16+temp;
   return u16;
 }
 
 /** Utility function to fill anchor from buffer */
-static void fill_anchor(struct DW1000 *dw) {
-  for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
-    uint16_t id = uint16_from_buf(dw->buf);
-    printf("TEST: fill_anchor\n");
-    printf("Sent ID: %d, actual ID: %d ",id,dw->anchors[i].id);
-    if (dw->anchors[i].id == id) {
-      dw->anchors[i].distance = float_from_buf(dw->buf + 2);
-      dw->anchors[i].time = get_sys_time_float();
-      dw->updated = true;
-      printf("Sent ID: %d, actual ID: %d",id,dw->anchors[i].id);
-      printf("Range: %f",float_from_buf(dw->buf + 2));
-      break;
-    }
-  }
-}
-/** Utility function to fill anchor from buffer: Custom made by me */
 static void fill_anchor_Cust(struct DW1000 *dw) {
-      uint16_t id = uint16_from_buf(dw->buf);
+   uint16_t id = uint16_from_buf(dw->buf);
   //  printf("TEST: fill_anchor\n");
     printf("Sent ID: %d",id);
    // printf("This is the Buffer: %d \n",dw->buf[0]);
@@ -175,62 +136,27 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
 }
 
 /** Data parsing function */
-static void dw1000_arduino_parse(struct DW1000 *dw, uint8_t c)//struct DW1000 *dw, uint8_t c
+static void dw1000_arduino_parse(struct DW1000 *dw)
 {		
 		
-	/*	while (uart_char_available(&DW1000_ARDUINO_DEV)){
-		_varByte = uart_getch(&DW1000_ARDUINO_DEV);
+	while (uart_char_available(&UWB_DW1000_DEV)){
+		_varByte = uart_getch(&UWB_DW1000_DEV);
 		
-		if (_varByte == END_MARKER && _inProgress == true){
-			_inProgress = false;
-			_allReceived = true;
-			fill_anchor_Cust(dw);
-		}
-
 		if (_inProgress){
 			dw->buf[dw->idx] = _varByte;
 			dw->idx++;
+		}
+		if (dw->idx == DW_NB_DATA){
+			_inProgress = false;
+			fill_anchor_Cust(dw);
 		}
 		
 		if (_varByte == START_MARKER){
 			dw->idx = 0;
 			_inProgress = true;
 		}
-
-
-	}*/
+	}
 		
-  switch (dw->state) {
-
-    case DW_WAIT_STX:
-  //     Waiting Synchro 
-      if (c == DW_STX) {
-        dw->idx = 0;
-        dw->ck = 0;
-        dw->state = DW_GET_DATA;
-       printf("TEST: 1\n");
-      }
-      break;
-
-    case DW_GET_DATA:
-     //  Read Bytes 
-     dw->buf[dw->idx++] = c;
-      dw->ck += c;
-      if (dw->idx == DW_NB_DATA) {
-        dw->state = DW_GET_CK;
-      }
-      break;
-
-    case DW_GET_CK:
-       //Checksum 
-      if (dw->ck == c) {
-        fill_anchor(dw);
-        printf("TEST: 2\n");
-      }
-      dw->state = DW_WAIT_STX;
-      break;
-    default: break;
-  }
 }
 
 static void send_gps_dw1000_small(struct DW1000 *dw)
@@ -268,13 +194,6 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   AbiSendMsgGPS(GPS_DW1000_ID, now_ts, &(dw->gps_dw1000));
 }
 
-void dw1000_reset_heading_ref(void)
-{
-  // store current heading as ref and stop periodic call
-  dw1000.initial_heading = stateGetNedToBodyEulers_f()->psi;
-  dw1000_arduino_dw1000_reset_heading_ref_status = MODULES_STOP;
-}
-
 /// init arrays from airframe file
 static const uint16_t ids[] = DW1000_ANCHORS_IDS;
 static const float pos_x[] = DW1000_ANCHORS_POS_X;
@@ -288,67 +207,6 @@ static void scale_position(struct DW1000 *dw)
   dw->pos.x = scale[0] * (dw->raw_pos.x - offset[0]);
   dw->pos.y = scale[1] * (dw->raw_pos.y - offset[1]);
   dw->pos.z = scale[2] * (dw->raw_pos.z - offset[2]);
-}
-
-void dw1000_arduino_init()
-{
-  // init DW1000 structure
-  dw1000.idx = 0;
-  dw1000.ck = 0;
-  dw1000.state = DW_WAIT_STX;
-  dw1000.initial_heading = DW1000_INITIAL_HEADING;
-  dw1000.pos.x = 0.f;
-  dw1000.pos.y = 0.f;
-  dw1000.pos.z = 0.f;
-  dw1000.updated = false;
-  for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
-    dw1000.anchors[i].distance = 0.f;
-    dw1000.anchors[i].time = 0.f;
-    dw1000.anchors[i].id = ids[i];
-    dw1000.anchors[i].pos.x = pos_x[i];
-    dw1000.anchors[i].pos.y = pos_y[i];
-    dw1000.anchors[i].pos.z = pos_z[i];
-  }
-
-  // gps structure init
-  dw1000.gps_dw1000.fix = GPS_FIX_NONE;
-  dw1000.gps_dw1000.pdop = 0;
-  dw1000.gps_dw1000.sacc = 0;
-  dw1000.gps_dw1000.pacc = 0;
-  dw1000.gps_dw1000.cacc = 0;
-  dw1000.gps_dw1000.comp_id = GPS_DW1000_ID;
-
-  struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
-  llh_nav0.lat = NAV_LAT0;
-  llh_nav0.lon = NAV_LON0;
-  /* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
-  llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
-  ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0);
-
-  // init trilateration algorithm
-  trilateration_init(dw1000.anchors);
-
-}
-
-void dw1000_arduino_periodic()
-{
-  // Check for timeout
-  gps_periodic_check(&(dw1000.gps_dw1000));
-}
-
-void dw1000_arduino_report()
-{
-  float buf[9];
-  buf[0] = dw1000.anchors[0].distance;
-  buf[1] = dw1000.anchors[1].distance;
-  buf[2] = dw1000.anchors[2].distance;
-  buf[3] = dw1000.raw_pos.x;
-  buf[4] = dw1000.raw_pos.y;
-  buf[5] = dw1000.raw_pos.z;
-  buf[6] = dw1000.pos.x;
-  buf[7] = dw1000.pos.y;
-  buf[8] = dw1000.pos.z;
-  DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 9, buf);
 }
 
 /** check timeout for each anchor
@@ -366,33 +224,75 @@ static bool check_anchor_timeout(struct DW1000 *dw)
   return false;
 }
 
-void dw1000_arduino_event()
-{
-	/* dw1000_arduino_parse(&dw1000);
-	if (dw1000.updated) {
-      // if no timeout on anchors, run trilateration algorithm
-     if (check_anchor_timeout(&dw1000) == false &&
-          trilateration_compute(dw1000.anchors, &dw1000.raw_pos) == 0) {
-        // apply scale and neutral corrections
-        scale_position(&dw1000);
-        // send fake GPS message for INS filters
-        send_gps_dw1000_small(&dw1000);
-      }
-      trilateration_compute(dw1000.anchors, &dw1000.raw_pos);
-      // apply scale and neutral corrections
-        scale_position(&dw1000);
-        // send fake GPS message for INS filters
-        send_gps_dw1000_small(&dw1000);
-      dw1000.updated = false;
-    }*/
-	
 
-  // Look for data on serial link and send to parser
-  while (uart_char_available(&DW1000_ARDUINO_DEV)) {
-    uint8_t ch = uart_getch(&DW1000_ARDUINO_DEV);
-    dw1000_arduino_parse(&dw1000, ch);
-    // process if new data
-    if (dw1000.updated) {
+ void uwb_dw1000_init(void) {
+	 // init DW1000 structure
+	  dw1000.idx = 0;
+	//  dw1000.ck = 0;
+	//  dw1000.state = DW_WAIT_STX;
+	  dw1000.initial_heading = DW1000_INITIAL_HEADING;
+	  dw1000.pos.x = 0.f;
+	  dw1000.pos.y = 0.f;
+	  dw1000.pos.z = 0.f;
+	  dw1000.updated = false;
+	  for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
+		dw1000.anchors[i].distance = 0.f;
+		dw1000.anchors[i].time = 0.f;
+		dw1000.anchors[i].id = ids[i];
+		dw1000.anchors[i].pos.x = pos_x[i];
+		dw1000.anchors[i].pos.y = pos_y[i];
+		dw1000.anchors[i].pos.z = pos_z[i];
+	  }
+
+	  // gps structure init
+	  dw1000.gps_dw1000.fix = GPS_FIX_NONE;
+	  dw1000.gps_dw1000.pdop = 0;
+	  dw1000.gps_dw1000.sacc = 0;
+	  dw1000.gps_dw1000.pacc = 0;
+	  dw1000.gps_dw1000.cacc = 0;
+	  dw1000.gps_dw1000.comp_id = GPS_DW1000_ID;
+
+	  struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
+	  llh_nav0.lat = NAV_LAT0;
+	  llh_nav0.lon = NAV_LON0;
+	  /* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
+	  llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
+	  ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0);
+
+	  // init trilateration algorithm
+	  trilateration_init(dw1000.anchors);
+ }//end of the init function
+ 
+ void uwb_dw1000_periodic(void) {
+ 	// Check for timeout
+  	gps_periodic_check(&(dw1000.gps_dw1000));
+ }//end of the periodic function
+
+ 
+void uwb_dw1000_resetheading(void) {
+ // store current heading as ref and stop periodic call
+  dw1000.initial_heading = stateGetNedToBodyEulers_f()->psi;
+  uwb_dw1000_delft_uwb_dw1000_resetheading_status = MODULES_STOP;
+  
+}//end of the reset heading function
+ 
+ void uwb_dw1000_report(void) {
+	  float buf[9];
+	  buf[0] = dw1000.anchors[0].distance;
+	  buf[1] = dw1000.anchors[1].distance;
+	  buf[2] = dw1000.anchors[2].distance;
+	  buf[3] = dw1000.raw_pos.x;
+	  buf[4] = dw1000.raw_pos.y;
+	  buf[5] = dw1000.raw_pos.z;
+	  buf[6] = dw1000.pos.x;
+	  buf[7] = dw1000.pos.y;
+	  buf[8] = dw1000.pos.z;
+	  DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 9, buf); 
+ }//end of the report function
+ 
+ void uwb_dw1000_event(void) {
+  	dw1000_arduino_parse(&dw1000);
+	if (dw1000.updated) {
       // if no timeout on anchors, run trilateration algorithm
     /* if (check_anchor_timeout(&dw1000) == false &&
           trilateration_compute(dw1000.anchors, &dw1000.raw_pos) == 0) {
@@ -401,14 +301,15 @@ void dw1000_arduino_event()
         // send fake GPS message for INS filters
         send_gps_dw1000_small(&dw1000);
       }*/
-        trilateration_compute(dw1000.anchors, &dw1000.raw_pos);
-        // apply scale and neutral corrections
-        scale_position(&dw1000);
-        // send fake GPS message for INS filters
-        send_gps_dw1000_small(&dw1000);
+      trilateration_compute(dw1000.anchors, &dw1000.raw_pos);
+      // apply scale and neutral corrections
+      scale_position(&dw1000);
+      // send fake GPS message for INS filters
+      send_gps_dw1000_small(&dw1000);
       dw1000.updated = false;
     }
-  }
-}
+	
+
+ }//end of the event function
 
 

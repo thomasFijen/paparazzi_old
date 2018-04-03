@@ -6,5 +6,5 @@ StartupNotify=true
 Icon=/home/USERNAME/paparazzi/conf/system/launcher/logo.png
 Name=Paparazzi
 Comment=The Free Autopilot
-Exec=/home/USERNAME/paparazzi/paparazzi
+Exec=/home/thomas/paparazzi/paparazzi
 Categories=Application;

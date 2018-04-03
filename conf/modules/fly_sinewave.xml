@@ -1,0 +1,15 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="fly_sinewave" dir="mymodule">
+  <doc>
+    <description>This function is used to allow the UAV to follow a sinewave trajectory.</description>
+  </doc>
+  <header>
+    <file name="fly_sinewave.h"/>
+  </header>
+  <init fun="fly_sinewave_init"/>
+  <makefile>
+    <file name="fly_sinewave.c"/>
+  </makefile>
+</module>
+
