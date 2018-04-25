@@ -32,6 +32,8 @@
 #include "subsystems/imu.h"
 #include "firmwares/rotorcraft/stabilization.h"
 #include "state.h"
+#include "modules/decawave/uwb_dw1000_delft.h"
+
 
 /** Set the default File logger path to the USB drive */
 #ifndef FILE_LOGGER_PATH
@@ -61,7 +63,7 @@ void file_logger_start(void)
   if (file_logger != NULL) {
     fprintf(
       file_logger,
-      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
+      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz,range1,range2,range3,range4\n"
     );
   }
 }
@@ -83,8 +85,10 @@ void file_logger_periodic(void)
   }
   static uint32_t counter;
   struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+  float ranges[4];
+  getRanges(ranges);
 
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f\n",
           counter,
           imu.gyro_unscaled.p,
           imu.gyro_unscaled.q,
@@ -102,7 +106,11 @@ void file_logger_periodic(void)
           quat->qi,
           quat->qx,
           quat->qy,
-          quat->qz
+          quat->qz,
+          ranges[0],
+          ranges[1],
+          ranges[2],
+          ranges[3]
          );
   counter++;
 }

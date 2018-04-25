@@ -18,21 +18,31 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/decawave/uwb_dw1000_delft.h"
+ * @file "modules/decawave/gps_uwb.h"
  * @author Thomas Fijen
- * This is a driver to get ranging data from the Decawave DW1000 connected to Arduino. The format of the data recieved over the serial link is: [(byte) START_MARKER, (byte) anchorID, (float) range]. This module is based off of the module 'dw1000_arduino' created by Gautier Hattenberger <gautier.hattenberger@enac.fr>
+ * Use this file so that the UWB can be simulated as a primary GPS structure
  */
 
-#ifndef UWB_DW1000_DELFT_H
-#define UWB_DW1000_DELFT_H
+#ifndef GPS_UWB_H
+#define GPS_UWB_H
+
+#include "std.h"
+#include "generated/airframe.h"
+#include "subsystems/gps.h"
+
+
+#ifndef PRIMARY_GPS
+#define PRIMARY_GPS GPS_UWB
+#endif
+
+extern struct GpsState gps_uwb;
+
+extern void gps_uwb_init(void);
+extern void gps_uwb_event(void);
+#define gps_uwb_periodic_check() gps_periodic_check(&gps_uwb)
  
- extern void uwb_dw1000_init(void);
- extern void uwb_dw1000_periodic(void);
- extern void uwb_dw1000_resetheading(void);
- extern void uwb_dw1000_report(void);
- extern void uwb_dw1000_event(void);
+extern void update_uwb(uint32_t now_ts, struct GpsState *gps_dw1000);
  
- extern void getRanges(float ranges[4]);
- 
+
 #endif
 

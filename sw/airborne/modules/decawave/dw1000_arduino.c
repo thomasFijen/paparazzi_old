@@ -131,12 +131,12 @@ static inline float float_from_buf(uint8_t* b) {
 
 /** Utility function to get uint16_t from buffer */
 static inline uint16_t uint16_from_buf(uint8_t* b) {
-  uint16_t u16;
-  //uint8_t temp;
-  memcpy ((uint8_t*)(&u16), b, sizeof(uint16_t));
-  //memcpy (&temp, b, sizeof(uint8_t));
-  //return u16+temp;
-  return u16;
+  uint16_t u16 = 0x0000;
+  uint8_t temp;
+  //memcpy ((uint8_t*)(&u16), b, sizeof(uint16_t));
+  memcpy (&temp, b, sizeof(uint8_t));
+  return u16+temp;
+  //return u16;
 }
 
 /** Utility function to fill anchor from buffer */
@@ -175,10 +175,10 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
 }
 
 /** Data parsing function */
-static void dw1000_arduino_parse(struct DW1000 *dw, uint8_t c)//struct DW1000 *dw, uint8_t c
+static void dw1000_arduino_parse(struct DW1000 *dw)//struct DW1000 *dw, uint8_t c
 {		
 		
-	/*	while (uart_char_available(&DW1000_ARDUINO_DEV)){
+		while (uart_char_available(&DW1000_ARDUINO_DEV)){
 		_varByte = uart_getch(&DW1000_ARDUINO_DEV);
 		
 		if (_varByte == END_MARKER && _inProgress == true){
@@ -198,9 +198,9 @@ static void dw1000_arduino_parse(struct DW1000 *dw, uint8_t c)//struct DW1000 *d
 		}
 
 
-	}*/
+	}
 		
-  switch (dw->state) {
+/*  switch (dw->state) {
 
     case DW_WAIT_STX:
   //     Waiting Synchro 
@@ -230,7 +230,7 @@ static void dw1000_arduino_parse(struct DW1000 *dw, uint8_t c)//struct DW1000 *d
       dw->state = DW_WAIT_STX;
       break;
     default: break;
-  }
+  }*/
 }
 
 static void send_gps_dw1000_small(struct DW1000 *dw)
@@ -368,39 +368,40 @@ static bool check_anchor_timeout(struct DW1000 *dw)
 
 void dw1000_arduino_event()
 {
-	/* dw1000_arduino_parse(&dw1000);
+	 dw1000_arduino_parse(&dw1000);
 	if (dw1000.updated) {
       // if no timeout on anchors, run trilateration algorithm
-     if (check_anchor_timeout(&dw1000) == false &&
-          trilateration_compute(dw1000.anchors, &dw1000.raw_pos) == 0) {
-        // apply scale and neutral corrections
-        scale_position(&dw1000);
-        // send fake GPS message for INS filters
-        send_gps_dw1000_small(&dw1000);
-      }
-      trilateration_compute(dw1000.anchors, &dw1000.raw_pos);
-      // apply scale and neutral corrections
-        scale_position(&dw1000);
-        // send fake GPS message for INS filters
-        send_gps_dw1000_small(&dw1000);
-      dw1000.updated = false;
-    }*/
-	
-
-  // Look for data on serial link and send to parser
-  while (uart_char_available(&DW1000_ARDUINO_DEV)) {
-    uint8_t ch = uart_getch(&DW1000_ARDUINO_DEV);
-    dw1000_arduino_parse(&dw1000, ch);
-    // process if new data
-    if (dw1000.updated) {
-      // if no timeout on anchors, run trilateration algorithm
-    /* if (check_anchor_timeout(&dw1000) == false &&
+   /*  if (check_anchor_timeout(&dw1000) == false &&
           trilateration_compute(dw1000.anchors, &dw1000.raw_pos) == 0) {
         // apply scale and neutral corrections
         scale_position(&dw1000);
         // send fake GPS message for INS filters
         send_gps_dw1000_small(&dw1000);
       }*/
+      
+      trilateration_compute(dw1000.anchors, &dw1000.raw_pos);
+      // apply scale and neutral corrections
+        scale_position(&dw1000);
+        // send fake GPS message for INS filters
+        send_gps_dw1000_small(&dw1000);
+      dw1000.updated = false;
+    }
+	
+
+  // Look for data on serial link and send to parser
+/*   while (uart_char_available(&DW1000_ARDUINO_DEV)) {
+    uint8_t ch = uart_getch(&DW1000_ARDUINO_DEV);
+    dw1000_arduino_parse(&dw1000, ch);
+    // process if new data
+    if (dw1000.updated) {
+      // if no timeout on anchors, run trilateration algorithm
+    if (check_anchor_timeout(&dw1000) == false &&
+          trilateration_compute(dw1000.anchors, &dw1000.raw_pos) == 0) {
+        // apply scale and neutral corrections
+        scale_position(&dw1000);
+        // send fake GPS message for INS filters
+        send_gps_dw1000_small(&dw1000);
+      }
         trilateration_compute(dw1000.anchors, &dw1000.raw_pos);
         // apply scale and neutral corrections
         scale_position(&dw1000);
@@ -408,7 +409,7 @@ void dw1000_arduino_event()
         send_gps_dw1000_small(&dw1000);
       dw1000.updated = false;
     }
-  }
+  }*/
 }
 
 

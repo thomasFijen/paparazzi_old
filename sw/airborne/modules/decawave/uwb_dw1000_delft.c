@@ -22,15 +22,20 @@
  * @author Thomas Fijen
  * This is a driver to get ranging data from the Decawave DW1000 connected to Arduino. The format of the data recieved over the serial link is: [(byte) START_MARKER, (byte) anchorID, (float) range]. This module is based off of the module 'dw1000_arduino' created by Gautier Hattenberger <gautier.hattenberger@enac.fr>
  */
+ /*
+ *	NOTE: To do this I had to edit the GPS.h file (line 166). I changed the value of GPS_TIMEOUT from 2 to 5
+ */
 
 #include "modules/decawave/uwb_dw1000_delft.h"
+//#include "modules/decawave/multilateration_ls.h"
+#include "modules/decawave/multilateration_nlls.h"
+//#include "modules/decawave/trilateration.h"
 
 #include "std.h"
 #include "mcu_periph/uart.h"
 #include "pprzlink/messages.h"
 #include "subsystems/datalink/downlink.h"
 #include "subsystems/abi.h"
-#include "modules/decawave/trilateration.h"
 #include "subsystems/gps.h"
 #include "state.h"
 #include "generated/flight_plan.h"
@@ -45,6 +50,7 @@
  * at the moment.
  * More advanced multilateration algorithms might allow more anchors in the future
  */
+ 
 #ifndef DW1000_NB_ANCHORS
 #define DW1000_NB_ANCHORS 3
 #endif
@@ -73,12 +79,17 @@
 //#define DW_WAIT_STX 0
 //#define DW_GET_DATA 1
 //#define DW_GET_CK 2
+
 #define DW_NB_DATA 5
 
 #define START_MARKER 254
 
 static bool _inProgress = false;
 static uint8_t _varByte = 0;
+static uint8_t count = 0;
+static float aveX[10] = {0,0,0,0,0,0,0,0,0,0};
+static float aveY[10] = {0,0,0,0,0,0,0,0,0,0};
+static float aveZ[10] = {0,0,0,0,0,0,0,0,0,0};
 
 
 /** DW1000 positionning system structure */
@@ -98,6 +109,20 @@ struct DW1000 {
 
 static struct DW1000 dw1000;
 
+void getRanges(float ranges[4]){
+	ranges[0] = dw1000.anchors[0].distance;
+	ranges[1] = dw1000.anchors[1].distance;
+	ranges[2] = dw1000.anchors[2].distance;
+	if(DW1000_NB_ANCHORS == 4)
+	{
+		ranges[3] = dw1000.anchors[3].distance;
+	}
+	else
+	{
+		ranges[3] = 0;
+	}
+}
+
 
 /** Utility function to get float from buffer */
 static inline float float_from_buf(uint8_t* b) {
@@ -109,27 +134,23 @@ static inline float float_from_buf(uint8_t* b) {
 /** Utility function to get uint16_t from buffer */
 static inline uint16_t uint16_from_buf(uint8_t* b) {
   uint16_t u16 = 0x0000;
-  //uint8_t temp;
-  memcpy ((uint8_t*)(&u16), b, sizeof(uint8_t));
-  //memcpy (&temp, b, sizeof(uint8_t));
-  //return u16+temp;
-  return u16;
+  uint8_t temp;
+ // memcpy ((uint8_t*)(&u16), b, sizeof(uint8_t));
+  memcpy (&temp, b, sizeof(uint8_t));
+  return u16+temp;
+ // return u16;
 }
 
 /** Utility function to fill anchor from buffer */
 static void fill_anchor_Cust(struct DW1000 *dw) {
    uint16_t id = uint16_from_buf(dw->buf);
-  //  printf("TEST: fill_anchor\n");
-    printf("Sent ID: %d",id);
-   // printf("This is the Buffer: %d \n",dw->buf[0]);
     
   for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
     if (dw->anchors[i].id == id) {
       dw->anchors[i].distance = float_from_buf(dw->buf+1);
       dw->anchors[i].time = get_sys_time_float();
       dw->updated = true;
-      printf("ID: %d",id);
-      printf("Range: %f \n",float_from_buf(dw->buf+1));
+    //  printf("ID: %d, - Range: %f \n",id,float_from_buf(dw->buf+1));
       break;
     }
   }
@@ -165,9 +186,40 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   float x = dw->pos.x * cosf(dw->initial_heading) - dw->pos.y * sinf(dw->initial_heading);
   float y = dw->pos.x * sinf(dw->initial_heading) + dw->pos.y * cosf(dw->initial_heading);
   struct EnuCoor_i enu_pos;
+  
+  //--Moving average filter:
+  aveX[count] = x;
+  aveY[count] = y;
+  aveZ[count] = dw->pos.z;
+  
+  if(count == 9)
+  {
+  	count = 0;
+  }
+  else
+  {
+  	count++;
+  }
+
+  x=0;
+  y=0;
+  float z=0;
+  for(int i=0;1<10;i++)
+  {
+  	x=x+aveX[i];
+  	y=y+aveY[i];
+  	z=z+aveZ[i];
+  }
+  x=x/10;
+  y=y/10;
+  z=z/10;
+  
   enu_pos.x = (int32_t) (x * 100);
   enu_pos.y = (int32_t) (y * 100);
   enu_pos.z = (int32_t) (dw->pos.z * 100);
+  
+  //Debugging: !!!!
+  printf("%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance);
 
   // Convert the ENU coordinates to ECEF
   ecef_of_enu_point_i(&(dw->gps_dw1000.ecef_pos), &(dw->ltp_def), &enu_pos);
@@ -176,7 +228,7 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   lla_of_ecef_i(&(dw->gps_dw1000.lla_pos), &(dw->gps_dw1000.ecef_pos));
   SetBit(dw->gps_dw1000.valid_fields, GPS_VALID_POS_LLA_BIT);
 
-  dw->gps_dw1000.hmsl = dw->ltp_def.hmsl + enu_pos.z * 10;
+  dw->gps_dw1000.hmsl = dw->ltp_def.hmsl + enu_pos.z * 10;		// just check that this is necessary. this might be causing the alt offset..
   SetBit(dw->gps_dw1000.valid_fields, GPS_VALID_HMSL_BIT);
 
   dw->gps_dw1000.num_sv = 7;
@@ -191,7 +243,10 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
 
   // publish new GPS data
   uint32_t now_ts = get_sys_time_usec();
-  AbiSendMsgGPS(GPS_DW1000_ID, now_ts, &(dw->gps_dw1000));
+  
+
+  //AbiSendMsgGPS(GPS_DW1000_ID, now_ts, &(dw->gps_dw1000));
+  update_uwb(now_ts, &(dw->gps_dw1000));
 }
 
 /// init arrays from airframe file
@@ -259,8 +314,11 @@ static bool check_anchor_timeout(struct DW1000 *dw)
 	  llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
 	  ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0);
 
-	  // init trilateration algorithm
-	  trilateration_init(dw1000.anchors);
+	  // init trilateration algorithm !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//	  trilateration_init(dw1000.anchors); //This is for trilateration
+//	  multilateration_init(dw1000.anchors);	//This is fo multilateration
+
+
  }//end of the init function
  
  void uwb_dw1000_periodic(void) {
@@ -292,20 +350,25 @@ void uwb_dw1000_resetheading(void) {
  
  void uwb_dw1000_event(void) {
   	dw1000_arduino_parse(&dw1000);
-	if (dw1000.updated) {
+ 	if (dw1000.updated) {
       // if no timeout on anchors, run trilateration algorithm
-    /* if (check_anchor_timeout(&dw1000) == false &&
-          trilateration_compute(dw1000.anchors, &dw1000.raw_pos) == 0) {
+      
+//    int temp = trilateration_compute(dw1000.anchors, &dw1000.raw_pos); 		//This is for trilateration
+//    int temp = multilateration_compute(dw1000.anchors, &dw1000.raw_pos);	//This is for LS multilateration
+	int temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos);			//This is for NLLS multilateration
+
+    if (check_anchor_timeout(&dw1000) == false && temp == 0) {
         // apply scale and neutral corrections
         scale_position(&dw1000);
         // send fake GPS message for INS filters
         send_gps_dw1000_small(&dw1000);
-      }*/
-      trilateration_compute(dw1000.anchors, &dw1000.raw_pos);
-      // apply scale and neutral corrections
-      scale_position(&dw1000);
-      // send fake GPS message for INS filters
-      send_gps_dw1000_small(&dw1000);
+      }
+      if(temp == -1)
+      {
+      	printf("ERROR: trilateration failed \n");
+      }
+      
+    
       dw1000.updated = false;
     }
 	

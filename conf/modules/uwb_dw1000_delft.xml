@@ -29,7 +29,7 @@
     <configure name="UWB_DW1000_UART" case="upper|lower"/>
     <configure name="UWB_DW1000_BAUD" default="B115200"/>
     <file name="uwb_dw1000_delft.c"/>
-    <file name="trilateration.c"/>
+    <file name="multilateration_nlls.c"/> <!-- multilateration_ls ; multilateration_nlls ; trilateration -->
     <define name="USE_$(UWB_DW1000_UART_UPPER)"/>
     <define name="UWB_DW1000_DEV" value="$(UWB_DW1000_UART_LOWER)"/>
     <define name="$(UWB_DW1000_UART_UPPER)_BAUD" value="$(UWB_DW1000_BAUD)"/>
