@@ -102,10 +102,25 @@
  	
  	det = det_mat_3d(matIn);
  	mat_adjoint_3d(adj,matIn);
-
- 	for(int i=0;i<9;i++)
- 	{
- 		out[i] = (1/det)*adj[i];
+	
+	if (det == 0)
+	{
+		out[0] = 0;
+		out[1] = 0;
+		out[2] = 0;
+		out[3] = 0;
+		out[4] = 0;
+		out[5] = 0;
+		out[6] = 0;
+		out[7] = 0;
+		out[8] = 0;
+	}
+	else
+	{
+	 	for(int i=0;i<9;i++)
+	 	{
+	 		out[i] = (1/det)*adj[i];
+	 	}
  	}
  }
  /*

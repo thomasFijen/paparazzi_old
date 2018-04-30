@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="3" ground_alt="0" lat0="51.9905836" lon0="4.3767138" max_dist_from_home="10" name="My Flightplan" security_height="0.4">
+<flight_plan alt="1" ground_alt="0" lat0="51.9905836" lon0="4.3767138" max_dist_from_home="10" name="My Flightplan" security_height="0.4">
   <header>
     #include "subsystems/datalink/datalink.h"
     #include "subsystems/electrical.h"
@@ -51,11 +51,11 @@
       !(IndexOfBlock('Holding point') > nav_block) &&
       !(nav_block >= IndexOfBlock('Land here')) &&
       (autopilot_in_flight() == true) )" deroute="Land here"/>
-    <exception cond="((GetPosAlt() > 6.5) && 
+    <exception cond="((GetPosAlt() > 3.5) && 
       !(IndexOfBlock('Holding point') > nav_block) &&
       !(nav_block >= IndexOfBlock('Land here')) &&
       (autopilot_in_flight() == true) )" deroute="Land here"/>
-    <exception cond="((GetPosAlt() > 7.5) &&
+    <exception cond="((GetPosAlt() > 4.5) &&
       !(IndexOfBlock('Holding point') > nav_block) &&
       (autopilot_in_flight() == true) )" deroute="Land here"/>
     <exception cond="(electrical.bat_low &&

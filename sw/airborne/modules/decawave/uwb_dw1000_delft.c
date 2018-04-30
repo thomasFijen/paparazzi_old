@@ -147,10 +147,21 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
     
   for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
     if (dw->anchors[i].id == id) {
-      dw->anchors[i].distance = float_from_buf(dw->buf+1);
-      dw->anchors[i].time = get_sys_time_float();
-      dw->updated = true;
-    //  printf("ID: %d, - Range: %f \n",id,float_from_buf(dw->buf+1));
+    float norm = sqrtf((dw->anchors[i].distance - float_from_buf(dw->buf+1))*(dw->anchors[i].distance - float_from_buf(dw->buf+1)));
+    	if (norm < 2 || dw->anchors[i].distance == 0) { //This is a check to reject outlier distance measurements
+		
+		  dw->anchors[i].distance = float_from_buf(dw->buf+1);
+		  dw->anchors[i].time = get_sys_time_float();
+		  dw->updated = true;
+	//	  printf("ID: %d, - Range: %f \n",id,float_from_buf(dw->buf+1));
+   		}
+    	else
+    	{
+    		dw->anchors[i].distance = dw->anchors[i].distance;
+		    dw->anchors[i].time = get_sys_time_float();
+		    dw->updated = true;
+		}
+    	
       break;
     }
   }
@@ -182,15 +193,49 @@ static void dw1000_arduino_parse(struct DW1000 *dw)
 
 static void send_gps_dw1000_small(struct DW1000 *dw)
 {
+
   // rotate and convert to cm integer
   float x = dw->pos.x * cosf(dw->initial_heading) - dw->pos.y * sinf(dw->initial_heading);
   float y = dw->pos.x * sinf(dw->initial_heading) + dw->pos.y * cosf(dw->initial_heading);
   struct EnuCoor_i enu_pos;
   
-  //--Moving average filter:
-  aveX[count] = x;
+  //float x = 5.5;
+  //float y = 5.2;
+  
+  //--Moving average filter and outlier rejection:
+/*  aveX[count] = x;
   aveY[count] = y;
   aveZ[count] = dw->pos.z;
+  
+  x=aveX[0];
+  y=aveY[0];
+  float z=aveZ[0];
+  float  error;
+  for(int i=0;i<10;i++)
+  {
+  	if(i == count && count != 0) {
+  		error = sqrtf((aveX[i-1]-aveX[i])*(aveX[i-1]-aveX[i])+(aveY[i-1]-aveY[i])*(aveY[i-1]-aveY[i]));
+  		if (error > 5) {
+  			x = x + aveX[i-1];
+  			y=y+aveY[i-1];
+	  		z=z+aveZ[i-1];
+  		}
+  	}
+  	else if (i == count && count == 0) {
+	  	error = sqrtf((aveX[9]-aveX[i])*(aveX[9]-aveX[i])+(aveY[9]-aveY[i])*(aveY[9]-aveY[i]));
+	  	x = x + aveX[9];
+  		y=y+aveY[9];
+	  	z=z+aveZ[9];
+  	}
+  	else {
+  		x=x+aveX[i];
+	  	y=y+aveY[i];
+	  	z=z+aveZ[i];
+  	}
+  }
+  x=x/10;
+  y=y/10;
+  z=z/10;
   
   if(count == 9)
   {
@@ -200,27 +245,15 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   {
   	count++;
   }
-
-  x=0;
-  y=0;
-  float z=0;
-  for(int i=0;1<10;i++)
-  {
-  	x=x+aveX[i];
-  	y=y+aveY[i];
-  	z=z+aveZ[i];
-  }
-  x=x/10;
-  y=y/10;
-  z=z/10;
-  
+  */
   enu_pos.x = (int32_t) (x * 100);
   enu_pos.y = (int32_t) (y * 100);
-  enu_pos.z = (int32_t) (dw->pos.z * 100);
+  enu_pos.z = (int32_t) (dw->pos.z * 100); // dw->pos.
+  struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
   
-  //Debugging: !!!!
-  printf("%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance);
-
+ // printf("%f,%f,%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance,x,y);
+  printf("%f,%f,%f,%f,%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance,x,y,(*pos2).x,(*pos2).y); //This was me trying to incoporate the optitrack data
+  
   // Convert the ENU coordinates to ECEF
   ecef_of_enu_point_i(&(dw->gps_dw1000.ecef_pos), &(dw->ltp_def), &enu_pos);
   SetBit(dw->gps_dw1000.valid_fields, GPS_VALID_POS_ECEF_BIT);
@@ -228,7 +261,7 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   lla_of_ecef_i(&(dw->gps_dw1000.lla_pos), &(dw->gps_dw1000.ecef_pos));
   SetBit(dw->gps_dw1000.valid_fields, GPS_VALID_POS_LLA_BIT);
 
-  dw->gps_dw1000.hmsl = dw->ltp_def.hmsl + enu_pos.z * 10;		// just check that this is necessary. this might be causing the alt offset..
+  dw->gps_dw1000.hmsl = dw->ltp_def.hmsl + enu_pos.z * 10;		
   SetBit(dw->gps_dw1000.valid_fields, GPS_VALID_HMSL_BIT);
 
   dw->gps_dw1000.num_sv = 7;
@@ -246,7 +279,7 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   
 
   //AbiSendMsgGPS(GPS_DW1000_ID, now_ts, &(dw->gps_dw1000));
-  update_uwb(now_ts, &(dw->gps_dw1000));
+  //update_uwb(now_ts, &(dw->gps_dw1000));
 }
 
 /// init arrays from airframe file
@@ -305,14 +338,14 @@ static bool check_anchor_timeout(struct DW1000 *dw)
 	  dw1000.gps_dw1000.sacc = 0;
 	  dw1000.gps_dw1000.pacc = 0;
 	  dw1000.gps_dw1000.cacc = 0;
-	  dw1000.gps_dw1000.comp_id = GPS_DW1000_ID;
+	  dw1000.gps_dw1000.comp_id = GPS_DW1000_ID; //GPS_DW1000_ID
 
 	  struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
 	  llh_nav0.lat = NAV_LAT0;
 	  llh_nav0.lon = NAV_LON0;
 	  /* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
 	  llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
-	  ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0);
+	  ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0); 
 
 	  // init trilateration algorithm !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //	  trilateration_init(dw1000.anchors); //This is for trilateration
@@ -356,8 +389,10 @@ void uwb_dw1000_resetheading(void) {
 //    int temp = trilateration_compute(dw1000.anchors, &dw1000.raw_pos); 		//This is for trilateration
 //    int temp = multilateration_compute(dw1000.anchors, &dw1000.raw_pos);	//This is for LS multilateration
 	int temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos);			//This is for NLLS multilateration
+	
+	//int temp = 0;
 
-    if (check_anchor_timeout(&dw1000) == false && temp == 0) {
+    if (temp == 0) { //check_anchor_timeout(&dw1000) == false &&
         // apply scale and neutral corrections
         scale_position(&dw1000);
         // send fake GPS message for INS filters
