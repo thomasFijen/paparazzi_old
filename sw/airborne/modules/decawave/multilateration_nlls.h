@@ -40,7 +40,7 @@ struct Anchor {
 };
 
 
-extern int nonLinLS_compute(struct Anchor *anchors, struct EnuCoor_f *pos);
+extern int nonLinLS_compute(struct Anchor *anchors, struct EnuCoor_f *pos, struct EnuCoor_f *oldPos);
 void transpose_3x4(float out[12], float mat_in[12]);
 void inverse_3x3(float out[9], float matIn[9]);
 void mat_adjoint_3d(float out[9], float matIn[9]);

@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1" ground_alt="0" lat0="51.9905836" lon0="4.3767138" max_dist_from_home="10" name="My Flightplan" security_height="0.4">
+<flight_plan alt="1.5" ground_alt="0" lat0="51.9905836" lon0="4.3767138" max_dist_from_home="10" name="My Flightplan" security_height="0.4">
   <header>
     #include "subsystems/datalink/datalink.h"
     #include "subsystems/electrical.h"
@@ -15,10 +15,10 @@
     <waypoint lat="51.9906311" lon="4.3767957" name="TRAJECTORY"/>
     <waypoint name="GOAL1" x="4" y="3.5"/>
     <waypoint name="GOAL2" x="4" y="6.5"/>
-    <waypoint name="A" x="4.5" y="4.0"/> <!-- x="4" y="4.0"-->
-    <waypoint name="B" x="4.5" y="6.0"/>
-    <waypoint name="C" x="6." y="6."/>
-    <waypoint name="D" x="6." y="4"/>
+    <waypoint name="A" x="4.8" y="4.8"/> <!-- x="4" y="4.0"-->
+    <waypoint name="B" x="3.9" y="5.8"/>
+    <waypoint name="C" x="5.6" y="6.8"/>
+    <waypoint name="D" x="6.5" y="5.6"/>
     <waypoint name="beacon1" x="4.45" y="0.0"/> <!--x="4.3" y="0.2" __ 51.9905907	4.3767699--> 
     <waypoint name="beacon2" x="9.1" y="3.2"/> <!--x="10.5" y="4.7" __ 51.9906108	4.3768470-->
     <waypoint name="beacon3" x="6.2" y="11.2"/> <!--x="6.0" y="10.9" __ 51.9906835	4.3768078-->
@@ -58,10 +58,10 @@
     <exception cond="((GetPosAlt() > 4.5) &&
       !(IndexOfBlock('Holding point') > nav_block) &&
       (autopilot_in_flight() == true) )" deroute="Land here"/>
-    <exception cond="(electrical.bat_low &&
+  <!--  <exception cond="(electrical.bat_low &&
       !(IndexOfBlock('Holding point') > nav_block) &&
       !(nav_block >= IndexOfBlock('Land here')) &&
-      (autopilot_in_flight() == true) )" deroute="Land here"/>
+      (autopilot_in_flight() == true) )" deroute="Land here"/> -->
     <exception cond="(electrical.bat_critical &&
       !(IndexOfBlock('Holding point') > nav_block) &&
       !(nav_block >= IndexOfBlock('Land here')) &&
@@ -97,13 +97,25 @@
       <go wp="A"/>
       <stay wp="A"/>
     </block>
+    <block name="go B">
+      <go wp="B"/>
+      <stay wp="B"/>
+    </block>
+    <block name="go C">
+      <go wp="C"/>
+      <stay wp="C"/>
+    </block>
+    <block name="go D">
+      <go wp="D"/>
+      <stay wp="D"/>
+    </block>
     <block name="flySquare">
    <!--   <while cond="LessThan(60,block_time)"> -->
         <go from="A" hmode="route" wp="B"/>
         <go from="B" hmode="route" wp="C"/>
         <go from="C" hmode="route" wp="D"/>
-        <go from="D" hmode="route" wp="STDBY"/>
-        <stay wp="STDBY"/>
+        <go from="D" hmode="route" wp="A"/>
+        <stay wp="A"/>
     <!--  </while> -->
     <!--  <deroute block="Standby"/> -->
     </block>

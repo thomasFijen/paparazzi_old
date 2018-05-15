@@ -17,7 +17,7 @@
       <module name="udp"/>
     </target>
 
-    <define name="USE_SONAR"/> 
+  <!--   <define name="USE_SONAR"/> -->
     
 	  <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
@@ -36,9 +36,9 @@
 		<configure name="UWB_DW1000_UART" value="UART2" />
 		<configure name="UWB_DW1000_BAUD" value="B57600" /> 
     </module> 
-    <module name="gps" type="datalink"/>   <!--ublox datalink ubx_ucenter -->
+    <module name="gps" type="datalink"/>   <!-- datalink UWB -->
 
-    <module name="ins" type="extended"/>
+    <module name="ins" type="gps_passthrough"/>
      
   </firmware>
 
@@ -47,7 +47,7 @@
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
     
-   <!--module name="video_thread"/>
+ <!--  <module name="video_thread"/>
     <module name="pose_history"/>
     <module name="cv_opticflow">
        <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
@@ -62,7 +62,7 @@
        <define name="OPTICFLOW_FOV_H" value="0.665499265"/>
        <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="1.0"/>
        <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.9"/>
-     </module--> 
+     </module>   -->
   </modules>
 
   <commands>
@@ -247,7 +247,7 @@
 		<define name="NB_ANCHORS" value="3"/>
 	</section> -->
 	
-	  <!-- I added this for the UWB beacons, Multilateration --> <!-- x1 = 4.45; y1 = 0 -->
+	  <!-- I added this for the UWB beacons, Multilateration --> <!-- x1 = 4.45; y1 = 0; x1 = 6.9; y1 = 1.9 -->
 	<section name="DW1000" prefix="DW1000_">
 		<define name="ANCHORS_IDS" value="1, 2, 3, 4" type="int[]"/>
 		<define name="ANCHORS_POS_X" value="6.9, 9.1, 6.2, 0.4" type="float[]"/> 

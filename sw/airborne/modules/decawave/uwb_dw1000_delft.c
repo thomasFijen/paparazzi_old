@@ -87,9 +87,11 @@
 static bool _inProgress = false;
 static uint8_t _varByte = 0;
 static uint8_t count = 0;
-static float aveX[10] = {0,0,0,0,0,0,0,0,0,0};
-static float aveY[10] = {0,0,0,0,0,0,0,0,0,0};
-static float aveZ[10] = {0,0,0,0,0,0,0,0,0,0};
+static float aveX[5] = {0,0,0,0,0};
+static float aveY[5] = {0,0,0,0,0};
+static float aveZ[5] = {0,0,0,0,0};
+static float X_old_kal[6] = {0,0,0,0,0,0};
+static float X_new_kal[6] = {0,0,0,0,0,0};
 
 
 /** DW1000 positionning system structure */
@@ -199,45 +201,46 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   float y = dw->pos.x * sinf(dw->initial_heading) + dw->pos.y * cosf(dw->initial_heading);
   struct EnuCoor_i enu_pos;
   
-  //float x = 5.5;
-  //float y = 5.2;
-  
-  //--Moving average filter and outlier rejection:
-/*  aveX[count] = x;
-  aveY[count] = y;
-  aveZ[count] = dw->pos.z;
-  
-  x=aveX[0];
-  y=aveY[0];
-  float z=aveZ[0];
-  float  error;
-  for(int i=0;i<10;i++)
+  //--Outlier rejection:
+  float error = sqrtf((aveX[count-1]-x)*(aveX[count-1]-x)+(aveY[count-1]-y)*(aveY[count-1]-y));
+  if (error > 10)
   {
-  	if(i == count && count != 0) {
-  		error = sqrtf((aveX[i-1]-aveX[i])*(aveX[i-1]-aveX[i])+(aveY[i-1]-aveY[i])*(aveY[i-1]-aveY[i]));
-  		if (error > 5) {
-  			x = x + aveX[i-1];
-  			y=y+aveY[i-1];
-	  		z=z+aveZ[i-1];
-  		}
-  	}
-  	else if (i == count && count == 0) {
-	  	error = sqrtf((aveX[9]-aveX[i])*(aveX[9]-aveX[i])+(aveY[9]-aveY[i])*(aveY[9]-aveY[i]));
-	  	x = x + aveX[9];
-  		y=y+aveY[9];
-	  	z=z+aveZ[9];
-  	}
-  	else {
-  		x=x+aveX[i];
-	  	y=y+aveY[i];
-	  	z=z+aveZ[i];
-  	}
+  	if(count == 0)
+  	{
+		aveX[count] = aveX[4];
+		aveY[count] = aveY[4];
+		aveZ[count] = aveZ[4];
+	}
+	else
+	{
+		aveX[count] = aveX[count-1];
+		aveY[count] = aveY[count-1];
+		aveZ[count] = aveZ[count-1];
+	}
   }
-  x=x/10;
-  y=y/10;
-  z=z/10;
+  else
+  {
+	  aveX[count] = x;
+	  aveY[count] = y;
+	  aveZ[count] = dw->pos.z;
+  }//--End outlier rejection
   
-  if(count == 9)
+  // -- Moving average Filter
+  x=0;
+  y=0;
+  float z=0;
+  
+  for(int i=0;i<5;i++)
+  {
+	x=x+aveX[i];
+ 	y=y+aveY[i];
+	z=z+aveZ[i];
+  }
+  x=x/5;
+  y=y/5;
+  z=z/5;
+  
+  if(count == 4)
   {
   	count = 0;
   }
@@ -245,14 +248,32 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   {
   	count++;
   }
-  */
+  //-- End of the filters and outlier rejection --
+  
+  
+  //-- Applying the Kalman filter:
+  
+ //struct EnuCoor_f *vel = stateGetSpeedEnu_f();
+/*   float uk[2] = {(*vel).x,(*vel).y};
+  kalman_filter(X_new_kal, X_old_kal, uk, x, y);
+  
+  enu_pos.x = (int32_t) (X_new_kal[4] * 100);
+  enu_pos.y = (int32_t) (X_new_kal[5] * 100);
+  
+  X_old_kal[1] = X_new_kal[1];
+  X_old_kal[2] = X_new_kal[2];
+  X_old_kal[3] = X_new_kal[3];
+  X_old_kal[4] = X_new_kal[4];
+  X_old_kal[5] = X_new_kal[5];
+  X_old_kal[0] = X_new_kal[0]; */
+  
+  // --- End of the Kalman filter ---
+  
   enu_pos.x = (int32_t) (x * 100);
   enu_pos.y = (int32_t) (y * 100);
-  enu_pos.z = (int32_t) (dw->pos.z * 100); // dw->pos.
-  struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
   
- // printf("%f,%f,%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance,x,y);
-  printf("%f,%f,%f,%f,%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance,x,y,(*pos2).x,(*pos2).y); //This was me trying to incoporate the optitrack data
+  enu_pos.z = (int32_t) (z * 100); // dw->pos.
+  //struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
   
   // Convert the ENU coordinates to ECEF
   ecef_of_enu_point_i(&(dw->gps_dw1000.ecef_pos), &(dw->ltp_def), &enu_pos);
@@ -277,10 +298,91 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   // publish new GPS data
   uint32_t now_ts = get_sys_time_usec();
   
-
-  //AbiSendMsgGPS(GPS_DW1000_ID, now_ts, &(dw->gps_dw1000));
+    //printf("%f,%f,%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance,x,y);
+  //printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance,x,y,(*pos2).x,(*pos2).y,(*pos2).z); 
+  
+  
+	// -- Sending the position to the Auto pilot
   //update_uwb(now_ts, &(dw->gps_dw1000));
 }
+
+//----------------------------------------------------
+/* Added a Kalman Filter to the position. Not sure if this will affect the other filters in the INS...
+*	Inputs: Previously Calculated X, inputs u, UWB pos x, UWB pos y
+		u = [vel X; vel Y]; X = [accel x, vel x, accel y, vel y, x, y]
+*/
+void kalman_filter(float out[6], float X_old[6], float u[2], float x, float y)
+{
+	//--Discretised model
+	float phi[36] = {0.8942,-2.4404,0,0,0,0,0.0018,0.9976,0,0,0,0,0,0,0.8942,-2.4404,0,0,0,0,0.0018,0.9976,0,0,0,0.002,0,0,1,0,0,0,0,0.002,0,1};
+	float gamma[12] = {2.4404,0,0.0024,0,0,2.4404,0,0.0024,0,0,0,0};
+	float Cd[12] = {0,0,0,0,1,0,0,0,0,0,0,1};
+	
+	float K[12] = {-0.008*1.0e-4,0,0,0,0.001*1.0e-4,-0.0049*1.0e-4,0,0.0001*1.0e-4,0.7365*1.0e-4,-0.009*1.0e-4,-0.009*1.0e-4,0.9060*1.0e-4};
+	float X_hat[6] = {0,0,0,0,0,0};
+	
+	//--Temporary storage variables
+	float temp_6x1[6];
+	float temp2_6x1[6];
+	float temp_2x1[2];
+	float temp2_2x1[2] = {x,y};
+	
+	//Determine X_hat from the model 
+    mat_mult_6x6_6x1(temp_6x1, phi, X_old);
+    mat_mult_6x2_2x1(temp2_6x1, gamma, u);
+    mat_add_6x1(X_hat,temp_6x1,temp2_6x1);
+    
+    //Update the estimate with the Kalman gain
+    mat_mult_2x6_6x1(temp_2x1,Cd,X_hat);
+    mat_subtract_2x1(temp_2x1,temp2_2x1,temp_2x1);
+    mat_mult_6x2_2x1(temp_6x1,K,temp_2x1);
+    mat_add_6x1(out,X_hat,temp_6x1);
+    
+    
+}
+
+//--Matrix functions for the Kalman filter
+void mat_mult_6x6_6x1(float out[6], float in1[36], float in2[6])
+{
+	out[0] = in1[0]*in2[0] + in1[1]*in2[1] + in1[2]*in2[2] + in1[3]*in2[3] + in1[4]*in2[4] + in1[5]*in2[5];
+	out[1] = in1[6]*in2[0] + in1[7]*in2[1] + in1[8]*in2[2] + in1[9]*in2[3] + in1[10]*in2[4] + in1[11]*in2[5];
+	out[2] = in1[12]*in2[0] +in1[13]*in2[1] + in1[14]*in2[2] + in1[15]*in2[3] + in1[16]*in2[4] + in1[17]*in2[5];
+	out[3] = in1[18]*in2[0] +in1[19]*in2[1] + in1[20]*in2[2] + in1[21]*in2[3] + in1[22]*in2[4] + in1[23]*in2[5];
+	out[4] = in1[24]*in2[0] +in1[25]*in2[1] + in1[26]*in2[2] + in1[27]*in2[3] + in1[28]*in2[4] + in1[29]*in2[5];
+	out[5] = in1[30]*in2[0] +in1[31]*in2[1] + in1[32]*in2[2] + in1[33]*in2[3] + in1[34]*in2[4] + in1[35]*in2[5];
+}
+void mat_mult_6x2_2x1(float out[6], float in1[12], float in2[2])
+{
+	out[0] = in1[0]*in2[0] + in1[1]*in2[1];
+	out[1] = in1[2]*in2[0] + in1[3]*in2[1];
+	out[2] = in1[4]*in2[0] + in1[5]*in2[1];
+	out[3] = in1[6]*in2[0] + in1[7]*in2[1];
+	out[4] = in1[8]*in2[0] + in1[9]*in2[1];
+	out[5] = in1[10]*in2[0] + in1[11]*in2[1];
+}
+void mat_add_6x1(float out[6], float in1[6], float in2[6])
+{
+	out[0] = in1[0]+in2[0];
+	out[1] = in1[1]+in2[1];
+	out[2] = in1[2]+in2[2];
+	out[3] = in1[3]+in2[3];
+	out[4] = in1[4]+in2[4];
+	out[5] = in1[5]+in2[5];
+}
+void mat_mult_2x6_6x1(float out[2], float in1[12], float in2[6])
+{
+	out[0] = in1[0]*in2[0] +in1[1]*in2[1] + in1[2]*in2[2] + in1[3]*in2[3] + in1[4]*in2[4] + in1[5]*in2[5];
+	out[1] = in1[6]*in2[0] +in1[7]*in2[1] + in1[8]*in2[2] + in1[9]*in2[3] + in1[10]*in2[4] + in1[11]*in2[5];
+}
+void mat_subtract_2x1(float out[2], float in1[2], float in2[2])
+{
+	out[0] = in1[0]-in2[0];
+	out[1] = in1[1]-in2[1];
+}
+
+
+//----------------------------------------------------
+
 
 /// init arrays from airframe file
 static const uint16_t ids[] = DW1000_ANCHORS_IDS;
@@ -319,8 +421,8 @@ static bool check_anchor_timeout(struct DW1000 *dw)
 	//  dw1000.ck = 0;
 	//  dw1000.state = DW_WAIT_STX;
 	  dw1000.initial_heading = DW1000_INITIAL_HEADING;
-	  dw1000.pos.x = 0.f;
-	  dw1000.pos.y = 0.f;
+	  dw1000.pos.x = 5.f;
+	  dw1000.pos.y = 5.f;
 	  dw1000.pos.z = 0.f;
 	  dw1000.updated = false;
 	  for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
@@ -383,12 +485,18 @@ void uwb_dw1000_resetheading(void) {
  
  void uwb_dw1000_event(void) {
   	dw1000_arduino_parse(&dw1000);
+  	
+  	//This is used for system identification
+  	struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+  	struct EnuCoor_f *vel = stateGetSpeedEnu_f();
+  	printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
+  	
  	if (dw1000.updated) {
       // if no timeout on anchors, run trilateration algorithm
       
 //    int temp = trilateration_compute(dw1000.anchors, &dw1000.raw_pos); 		//This is for trilateration
 //    int temp = multilateration_compute(dw1000.anchors, &dw1000.raw_pos);	//This is for LS multilateration
-	int temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos);			//This is for NLLS multilateration
+	int temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);			//This is for NLLS multilateration
 	
 	//int temp = 0;
 

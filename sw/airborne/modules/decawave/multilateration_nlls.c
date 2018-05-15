@@ -33,11 +33,11 @@
  /*
  *	This performs Gauss Newton optimisation to find the solution to the nonlinear least squares problem 
  */
- int nonLinLS_compute(struct Anchor *anchors, struct EnuCoor_f *pos)
+ int nonLinLS_compute(struct Anchor *anchors, struct EnuCoor_f *pos, struct EnuCoor_f *oldPos)
  {
  	uint8_t count = 0;	//Counts the number of iterations
  	float err = 1;
- 	float x0[3] = {0, 0, 0};
+ 	float x0[3] = {oldPos->x, oldPos->y, oldPos->z};
 
  	float jacob[12];
  	float temp[12];
