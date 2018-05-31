@@ -21,9 +21,9 @@
     <file name="uwb_dw1000_delft.h"/>
   </header>
   <init fun="uwb_dw1000_init()"/>
-  <periodic fun="uwb_dw1000_periodic()" freq="10"/>
+  <periodic fun="uwb_dw1000_periodic()" freq="10" autorun="FALSE"/>
   <periodic fun="uwb_dw1000_resetheading()" freq="1" autorun="FALSE"/>
-  <periodic fun="uwb_dw1000_report()" freq="10" autorun="FALSE"/>
+  <periodic fun="uwb_dw1000_report()" freq="10" autorun="TRUE"/>
   <event fun="uwb_dw1000_event()"/>
   <makefile>
     <configure name="UWB_DW1000_UART" case="upper|lower"/>

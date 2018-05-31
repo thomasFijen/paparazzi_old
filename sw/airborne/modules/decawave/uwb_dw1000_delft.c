@@ -301,6 +301,9 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
     //printf("%f,%f,%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance,x,y);
   //printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance,x,y,(*pos2).x,(*pos2).y,(*pos2).z); 
   
+  //struct EnuCoor_f *vel = stateGetSpeedEnu_f();
+  //printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y);
+  
   
 	// -- Sending the position to the Auto pilot
   //update_uwb(now_ts, &(dw->gps_dw1000));
@@ -470,7 +473,7 @@ void uwb_dw1000_resetheading(void) {
 }//end of the reset heading function
  
  void uwb_dw1000_report(void) {
-	  float buf[9];
+	/*  float buf[9];
 	  buf[0] = dw1000.anchors[0].distance;
 	  buf[1] = dw1000.anchors[1].distance;
 	  buf[2] = dw1000.anchors[2].distance;
@@ -480,17 +483,18 @@ void uwb_dw1000_resetheading(void) {
 	  buf[6] = dw1000.pos.x;
 	  buf[7] = dw1000.pos.y;
 	  buf[8] = dw1000.pos.z;
-	  DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 9, buf); 
+	  DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 9, buf); */
+	  
+	struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+  	struct EnuCoor_f *vel1 = stateGetSpeedEnu_f();
+  	printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel1).x,(*vel1).y); //for identification 
+	  
  }//end of the report function
  
  void uwb_dw1000_event(void) {
   	dw1000_arduino_parse(&dw1000);
   	
-  	//This is used for system identification
-  	struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
-  	struct EnuCoor_f *vel = stateGetSpeedEnu_f();
-  	printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
-  	
+	
  	if (dw1000.updated) {
       // if no timeout on anchors, run trilateration algorithm
       
@@ -508,7 +512,7 @@ void uwb_dw1000_resetheading(void) {
       }
       if(temp == -1)
       {
-      	printf("ERROR: trilateration failed \n");
+      	//printf("ERROR: Multilateration failed \n");
       }
       
     

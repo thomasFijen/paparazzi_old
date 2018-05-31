@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1.5" ground_alt="0" lat0="51.9905836" lon0="4.3767138" max_dist_from_home="10" name="My Flightplan" security_height="0.4">
+<flight_plan alt="1.5" ground_alt="0"  lat0="51.9905836" lon0="4.3767138" max_dist_from_home="10" name="My Flightplan" security_height="0.4">
   <header>
     #include "subsystems/datalink/datalink.h"
     #include "subsystems/electrical.h"
@@ -87,7 +87,7 @@
     <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="stateGetPositionEnu_f()->z > 1" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <stay climb="1.8" vmode="climb" wp="CLIMB"/>
+      <stay climb="0.7" vmode="climb" wp="CLIMB"/>
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <call_once fun="NavSetWaypointHere(WP_STDBY)"/>

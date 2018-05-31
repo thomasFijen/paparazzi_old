@@ -69,13 +69,25 @@
  		x0[2] = x_hat[2];
  		count++;
  	}
+	
+	if (det_mat_3d(temp2) == 0)
+	{
+		//Store the x, y and z positions
+		pos->x = oldPos->x;
+		pos->y = oldPos->y;
+		pos->z = oldPos->z;
 
- 	//Store the x, y and z positions
-	pos->x = x_hat[0];
-	pos->y = x_hat[1];
-	pos->z = x_hat[2];
+		return -1;
+	}
+	else
+	{
+	 	//Store the x, y and z positions
+		pos->x = x_hat[0];
+		pos->y = x_hat[1];
+		pos->z = x_hat[2];
 
-	return 0;
+		return 0;
+	}
  }
 
  /*

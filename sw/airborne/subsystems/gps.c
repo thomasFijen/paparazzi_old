@@ -271,7 +271,6 @@ void gps_periodic_check(struct GpsState *gps_s)
 {
   if (sys_time.nb_sec - gps_s->last_msg_time > GPS_TIMEOUT) {
     gps_s->fix = GPS_FIX_NONE;
-    printf("GPS TIME OUT:");
   }
 
 #ifdef SECONDARY_GPS
