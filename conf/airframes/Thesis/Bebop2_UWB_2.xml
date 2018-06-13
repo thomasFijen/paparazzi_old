@@ -17,7 +17,7 @@
       <module name="udp"/>
     </target>
 
-  <!--   <define name="USE_SONAR"/> -->
+    <define name="USE_SONAR" value="TRUE"/>
     
 	  <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
@@ -28,17 +28,17 @@
     
     <module name="stabilization" type="indi_simple"/>
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="TRUE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
-      <define name="AHRS_USE_GPS" value="TRUE"/>
+      <configure name="USE_MAGNETOMETER" value="FALSE"/>
+      <!-- <define name="AHRS_USE_GPS_HEADING" value="FALSE"/> -->
+      <!-- <define name="AHRS_USE_GPS" value="TRUE"/> -->
     </module>
-       <module name="uwb_dw1000_delft"> 
+    <module name="uwb_dw1000_delft"> 
 		<configure name="UWB_DW1000_UART" value="UART2" />
 		<configure name="UWB_DW1000_BAUD" value="B57600" /> 
-    </module> 
-    <module name="gps" type="datalink"/>   <!-- datalink UWB -->
+    </module>
+    <module name="gps" type="uwb"/>   <!-- datalink UWB -->
 
-    <module name="ins" type="gps_passthrough"/>
+    <module name="ins" type="hff_extended"/>
      
   </firmware>
 
@@ -47,7 +47,7 @@
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
     
- <!--  <module name="video_thread"/>
+  <module name="video_thread"/>
     <module name="pose_history"/>
     <module name="cv_opticflow">
        <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
@@ -62,7 +62,7 @@
        <define name="OPTICFLOW_FOV_H" value="0.665499265"/>
        <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="1.0"/>
        <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.9"/>
-     </module>   -->
+     </module>  
   </modules>
 
   <commands>
@@ -186,26 +186,26 @@
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="350"/>
-    <define name="HOVER_KD" value="85"/>
-    <define name="HOVER_KI" value="20"/>
+    <define name="HOVER_KP" value="100"/>
+    <define name="HOVER_KD" value="10"/>
+    <define name="HOVER_KI" value="0"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
-    <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
+    <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="0.5" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="120"/>
-    <define name="DGAIN" value="100"/>
-    <define name="IGAIN" value="30"/>
+    <define name="DGAIN" value="370"/>
+    <define name="IGAIN" value="0"/>
   </section>
 
   <section name="NAVIGATION" prefix="NAV_">
-    <define name="CLIMB_VSPEED" value="4.5"/>
+    <define name="CLIMB_VSPEED" value="0.1"/>
     <define name="DESCEND_VSPEED" value="-1.0"/>
   </section>
 
@@ -221,7 +221,7 @@
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
 
-    <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
+    <!-- <define name="NO_RC_THRUST_LIMIT" value="TRUE"/> -->
   </section>
 
   <section name="BAT">

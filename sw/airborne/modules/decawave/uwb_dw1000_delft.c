@@ -303,7 +303,7 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   
   
 	// -- Sending the position to the Auto pilot
-  //update_uwb(now_ts, &(dw->gps_dw1000));
+  // update_uwb(now_ts, &(dw->gps_dw1000));
 }
 
 //----------------------------------------------------
@@ -488,8 +488,8 @@ void uwb_dw1000_resetheading(void) {
   	
   	//This is used for system identification
   	struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
-  	struct EnuCoor_f *vel = stateGetSpeedEnu_f();
-  	printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
+  	// struct EnuCoor_f *vel = stateGetSpeedEnu_f();
+  	printf("%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z); //for identification
   	
  	if (dw1000.updated) {
       // if no timeout on anchors, run trilateration algorithm
