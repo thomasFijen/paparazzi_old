@@ -1,6 +1,6 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-<airframe name="bebop2_indi">
+<airframe name="bebop2_uwb_2">
   <description>Bebop2, indoor using UWB
   </description>
 
@@ -107,6 +107,7 @@
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
   <section name="AHRS" prefix="AHRS_">
     <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
+    <!-- <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> -->
     <!-- Toulouse -->
     <!--define name="H_X" value="0.513081"/>
     <define name="H_Y" value="-0.00242783"/>
