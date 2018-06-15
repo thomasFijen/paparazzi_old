@@ -303,7 +303,7 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   
   
 	// -- Sending the position to the Auto pilot
-  // update_uwb(now_ts, &(dw->gps_dw1000));
+  update_uwb(now_ts, &(dw->gps_dw1000));
 }
 
 //----------------------------------------------------
@@ -457,7 +457,8 @@ static bool check_anchor_timeout(struct DW1000 *dw)
  }//end of the init function
  
  void uwb_dw1000_periodic(void) {
- 	// Check for timeout
+ 	// Check for timeout. If the beacons stop sending ranges, then this is called to set the GPS fix to false.
+  // This might casuse issues when using the datalink type GPS as it will switch between datalink and uwb.
   	gps_periodic_check(&(dw1000.gps_dw1000));
  }//end of the periodic function
 

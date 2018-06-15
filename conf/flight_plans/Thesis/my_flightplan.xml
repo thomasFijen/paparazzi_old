@@ -85,12 +85,12 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="stateGetPositionEnu_f()->z > 1" deroute="Standby"/>
-      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <stay climb="0.1" vmode="climb" wp="CLIMB"/>
+      <exception cond="stateGetPositionEnu_f()->z > 0.5" deroute="Standby"/>
+      <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
+      <stay climb="0.4" vmode="climb" wp="STDBY"/>
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
-      <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
+      <!-- <call_once fun="NavSetWaypointHere(WP_STDBY)"/> -->
       <stay wp="STDBY"/>
     </block>
     <block name="go A">

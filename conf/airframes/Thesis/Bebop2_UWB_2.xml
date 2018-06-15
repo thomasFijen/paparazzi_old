@@ -29,7 +29,7 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <!-- <define name="AHRS_USE_GPS_HEADING" value="FALSE"/> -->
+      <!-- <define name="AHRS_USE_GPS_HEADING" value="TRUE"/> -->
       <!-- <define name="AHRS_USE_GPS" value="TRUE"/> -->
     </module>
     <module name="uwb_dw1000_delft"> 
@@ -107,7 +107,6 @@
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
   <section name="AHRS" prefix="AHRS_">
     <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
-    <!-- <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> -->
     <!-- Toulouse -->
     <!--define name="H_X" value="0.513081"/>
     <define name="H_Y" value="-0.00242783"/>
@@ -116,6 +115,7 @@
     <define name="H_X" value="0.3892503"/>
     <define name="H_Y" value="0.0017972"/>
     <define name="H_Z" value="0.9211303"/>
+    <!-- <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> -->
   </section>
 
   <section name="INS" prefix="INS_">
@@ -187,11 +187,11 @@
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="100"/>
-    <define name="HOVER_KD" value="10"/>
-    <define name="HOVER_KI" value="0"/>
+    <define name="HOVER_KP" value="283"/>
+    <define name="HOVER_KD" value="82"/>
+    <define name="HOVER_KI" value="20"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
-    <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
+    <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
@@ -206,7 +206,7 @@
   </section>
 
   <section name="NAVIGATION" prefix="NAV_">
-    <define name="CLIMB_VSPEED" value="0.1"/>
+    <define name="CLIMB_VSPEED" value="0.4"/>
     <define name="DESCEND_VSPEED" value="-1.0"/>
   </section>
 
