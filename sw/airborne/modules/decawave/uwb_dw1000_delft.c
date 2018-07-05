@@ -87,11 +87,11 @@
 static bool _inProgress = false;
 static uint8_t _varByte = 0;
 static uint8_t count = 0;
-static float aveX[5] = {0,0,0,0,0};
-static float aveY[5] = {0,0,0,0,0};
-static float aveZ[5] = {0,0,0,0,0};
-static float X_old_kal[6] = {0,0,0,0,0,0};
-static float X_new_kal[6] = {0,0,0,0,0,0};
+static float aveX[5] = {0.f,0.f,0.f,0.f,0.f};
+static float aveY[5] = {0.f,0.f,0.f,0.f,0.f};
+static float aveZ[5] = {0.f,0.f,0.f,0.f,0.f};
+// static float X_old_kal[6] = {0,0,0,0,0,0};
+// static float X_new_kal[6] = {0,0,0,0,0,0};
 
 
 /** DW1000 positionning system structure */
