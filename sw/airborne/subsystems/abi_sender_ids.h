@@ -205,10 +205,6 @@
 #define GPS_DW1000_ID 15
 #endif
 
-#ifndef GPS_UWB_ID
-#define GPS_UWB_ID 15
-#endif
-
 /*
  * IDs of IMU sensors (accel, gyro)
  */
@@ -380,6 +376,13 @@
 
 #ifndef ACCEL_SP_FCR_ID
 #define ACCEL_SP_FCR_ID 1 // Formation Control Rotorcraft
+#endif
+
+/*
+ * RELATIVE_LOCALIZATION communication (message 24)
+*/
+#ifndef RELATIVE_LOCALIZATION_ID
+#define RELATIVE_LOCALIZATION_ID 1
 #endif
 
 #endif /* ABI_SENDER_IDS_H */

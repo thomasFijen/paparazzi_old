@@ -128,9 +128,5 @@
       <stay until="stage_time>60" wp="TD"/>
       <deroute block="ComeBackAndLand"/>
     </block>
-    <block name="Force Kill Engines">
-    	<call_once fun="autopilot_set_motors_on(FALSE)"/>
-	<while cond="1"/>
-	    </block>
   </blocks>
 </flight_plan>

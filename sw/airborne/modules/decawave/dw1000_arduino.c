@@ -76,32 +76,7 @@
 #define DW_WAIT_STX 0
 #define DW_GET_DATA 1
 #define DW_GET_CK 2
-#define DW_NB_DATA 6//6
-
-// Variables that i added, REMOVE THE UNNECESSARY ONES
-//PRINT_CONFIG_VAR(SERIAL_UART)
-//PRINT_CONFIG_VAR(SERIAL_BAUD)
-// define coms link for stereocam
-//#define SERIAL_PORT   (&((SERIAL_UART).device))
-//struct link_device *xdev = SERIAL_PORT;
-
-//#define SerialGetch() SERIAL_PORT ->get_byte(SERIAL_PORT->periph)
-//#define SerialChAvailable()(xdev->char_available(xdev->periph))
-#define END_MARKER 255
-#define START_MARKER 254
-
-//static uint8_t _bytesRecvd = 0;
-//static uint8_t _dataRecvCount = 0;
-//static uint8_t _tempBuffer[MAX_MESSAGE];
-//static uint8_t _tempBuffer2[MAX_MESSAGE];
-//static uint8_t _recvBuffer[FLOAT_SIZE];
-//static uint8_t _dataSendCount = 0;
-//static uint8_t _dataTotalSend = 0;
-static bool _inProgress = false;
-static bool _startFound = false;
-static bool _allReceived = false;
-static uint8_t _varByte = 0;
-
+#define DW_NB_DATA 6
 
 /** DW1000 positionning system structure */
 struct DW1000 {
@@ -125,96 +100,46 @@ static struct DW1000 dw1000;
 static inline float float_from_buf(uint8_t* b) {
   float f;
   memcpy((uint8_t*)(&f), b, sizeof(float));
-  //memcpy(&f, b, sizeof(float));
   return f;
 }
 
 /** Utility function to get uint16_t from buffer */
 static inline uint16_t uint16_from_buf(uint8_t* b) {
-  uint16_t u16 = 0x0000;
-  uint8_t temp;
-  //memcpy ((uint8_t*)(&u16), b, sizeof(uint16_t));
-  memcpy (&temp, b, sizeof(uint8_t));
-  return u16+temp;
-  //return u16;
+  uint16_t u16;
+  memcpy ((uint8_t*)(&u16), b, sizeof(uint16_t));
+  return u16;
 }
 
 /** Utility function to fill anchor from buffer */
 static void fill_anchor(struct DW1000 *dw) {
   for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
     uint16_t id = uint16_from_buf(dw->buf);
-    printf("TEST: fill_anchor\n");
-    printf("Sent ID: %d, actual ID: %d ",id,dw->anchors[i].id);
     if (dw->anchors[i].id == id) {
       dw->anchors[i].distance = float_from_buf(dw->buf + 2);
       dw->anchors[i].time = get_sys_time_float();
       dw->updated = true;
-      printf("Sent ID: %d, actual ID: %d",id,dw->anchors[i].id);
-      printf("Range: %f",float_from_buf(dw->buf + 2));
-      break;
-    }
-  }
-}
-/** Utility function to fill anchor from buffer: Custom made by me */
-static void fill_anchor_Cust(struct DW1000 *dw) {
-      uint16_t id = uint16_from_buf(dw->buf);
-  //  printf("TEST: fill_anchor\n");
-    printf("Sent ID: %d",id);
-   // printf("This is the Buffer: %d \n",dw->buf[0]);
-    
-  for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
-    if (dw->anchors[i].id == id) {
-      dw->anchors[i].distance = float_from_buf(dw->buf+1);
-      dw->anchors[i].time = get_sys_time_float();
-      dw->updated = true;
-      printf("ID: %d",id);
-      printf("Range: %f \n",float_from_buf(dw->buf+1));
       break;
     }
   }
 }
 
 /** Data parsing function */
-static void dw1000_arduino_parse(struct DW1000 *dw)//struct DW1000 *dw, uint8_t c
-{		
-		
-		while (uart_char_available(&DW1000_ARDUINO_DEV)){
-		_varByte = uart_getch(&DW1000_ARDUINO_DEV);
-		
-		if (_varByte == END_MARKER && _inProgress == true){
-			_inProgress = false;
-			_allReceived = true;
-			fill_anchor_Cust(dw);
-		}
-
-		if (_inProgress){
-			dw->buf[dw->idx] = _varByte;
-			dw->idx++;
-		}
-		
-		if (_varByte == START_MARKER){
-			dw->idx = 0;
-			_inProgress = true;
-		}
-
-
-	}
-		
-/*  switch (dw->state) {
+static void dw1000_arduino_parse(struct DW1000 *dw, uint8_t c)
+{
+  switch (dw->state) {
 
     case DW_WAIT_STX:
-  //     Waiting Synchro 
+      /* Waiting Synchro */
       if (c == DW_STX) {
         dw->idx = 0;
         dw->ck = 0;
         dw->state = DW_GET_DATA;
-       printf("TEST: 1\n");
       }
       break;
 
     case DW_GET_DATA:
-     //  Read Bytes 
-     dw->buf[dw->idx++] = c;
+      /* Read Bytes */
+      dw->buf[dw->idx++] = c;
       dw->ck += c;
       if (dw->idx == DW_NB_DATA) {
         dw->state = DW_GET_CK;
@@ -222,15 +147,13 @@ static void dw1000_arduino_parse(struct DW1000 *dw)//struct DW1000 *dw, uint8_t 
       break;
 
     case DW_GET_CK:
-       //Checksum 
+      /* Checksum */
       if (dw->ck == c) {
         fill_anchor(dw);
-        printf("TEST: 2\n");
       }
       dw->state = DW_WAIT_STX;
       break;
-    default: break;
-  }*/
+  }
 }
 
 static void send_gps_dw1000_small(struct DW1000 *dw)
@@ -368,48 +291,23 @@ static bool check_anchor_timeout(struct DW1000 *dw)
 
 void dw1000_arduino_event()
 {
-	 dw1000_arduino_parse(&dw1000);
-	if (dw1000.updated) {
-      // if no timeout on anchors, run trilateration algorithm
-   /*  if (check_anchor_timeout(&dw1000) == false &&
-          trilateration_compute(dw1000.anchors, &dw1000.raw_pos) == 0) {
-        // apply scale and neutral corrections
-        scale_position(&dw1000);
-        // send fake GPS message for INS filters
-        send_gps_dw1000_small(&dw1000);
-      }*/
-      
-      trilateration_compute(dw1000.anchors, &dw1000.raw_pos);
-      // apply scale and neutral corrections
-        scale_position(&dw1000);
-        // send fake GPS message for INS filters
-        send_gps_dw1000_small(&dw1000);
-      dw1000.updated = false;
-    }
-	
-
   // Look for data on serial link and send to parser
-/*   while (uart_char_available(&DW1000_ARDUINO_DEV)) {
+  while (uart_char_available(&DW1000_ARDUINO_DEV)) {
     uint8_t ch = uart_getch(&DW1000_ARDUINO_DEV);
     dw1000_arduino_parse(&dw1000, ch);
     // process if new data
     if (dw1000.updated) {
       // if no timeout on anchors, run trilateration algorithm
-    if (check_anchor_timeout(&dw1000) == false &&
+      if (check_anchor_timeout(&dw1000) == false &&
           trilateration_compute(dw1000.anchors, &dw1000.raw_pos) == 0) {
         // apply scale and neutral corrections
         scale_position(&dw1000);
         // send fake GPS message for INS filters
         send_gps_dw1000_small(&dw1000);
       }
-        trilateration_compute(dw1000.anchors, &dw1000.raw_pos);
-        // apply scale and neutral corrections
-        scale_position(&dw1000);
-        // send fake GPS message for INS filters
-        send_gps_dw1000_small(&dw1000);
       dw1000.updated = false;
     }
-  }*/
+  }
 }
 
 
