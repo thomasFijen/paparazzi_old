@@ -416,44 +416,42 @@ static bool check_anchor_timeout(struct DW1000 *dw)
 
 
  void uwb_dw1000_init(void) {
-	 // init DW1000 structure
-	  dw1000.idx = 0;
-	//  dw1000.ck = 0;
-	//  dw1000.state = DW_WAIT_STX;
-	  dw1000.initial_heading = DW1000_INITIAL_HEADING;
-	  dw1000.pos.x = 5.f;
-	  dw1000.pos.y = 5.f;
-	  dw1000.pos.z = 0.f;
-	  dw1000.updated = false;
-	  for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
-		dw1000.anchors[i].distance = 0.f;
-		dw1000.anchors[i].time = 0.f;
-		dw1000.anchors[i].id = ids[i];
-		dw1000.anchors[i].pos.x = pos_x[i];
-		dw1000.anchors[i].pos.y = pos_y[i];
-		dw1000.anchors[i].pos.z = pos_z[i];
-	  }
+     // init DW1000 structure
+    dw1000.idx = 0;
+  //  dw1000.ck = 0;
+  //  dw1000.state = DW_WAIT_STX;
+    dw1000.initial_heading = DW1000_INITIAL_HEADING;
+    dw1000.pos.x = 5.f;
+    dw1000.pos.y = 5.f;
+    dw1000.pos.z = 0.f;
+    dw1000.updated = false;
+    for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
+    dw1000.anchors[i].distance = 0.f;
+    dw1000.anchors[i].time = 0.f;
+    dw1000.anchors[i].id = ids[i];
+    dw1000.anchors[i].pos.x = pos_x[i];
+    dw1000.anchors[i].pos.y = pos_y[i];
+    dw1000.anchors[i].pos.z = pos_z[i];
+    }
 
-	  // gps structure init
-	  dw1000.gps_dw1000.fix = GPS_FIX_NONE;
-	  dw1000.gps_dw1000.pdop = 0;
-	  dw1000.gps_dw1000.sacc = 0;
-	  dw1000.gps_dw1000.pacc = 0;
-	  dw1000.gps_dw1000.cacc = 0;
-	  dw1000.gps_dw1000.comp_id = GPS_DW1000_ID; //GPS_DW1000_ID
+    // gps structure init
+    dw1000.gps_dw1000.fix = GPS_FIX_NONE;
+    dw1000.gps_dw1000.pdop = 0;
+    dw1000.gps_dw1000.sacc = 0;
+    dw1000.gps_dw1000.pacc = 0;
+    dw1000.gps_dw1000.cacc = 0;
+    dw1000.gps_dw1000.comp_id = GPS_DW1000_ID; //GPS_DW1000_ID
 
-	  struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
-	  llh_nav0.lat = NAV_LAT0;
-	  llh_nav0.lon = NAV_LON0;
-	  /* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
-	  llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
-	  ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0); 
+    struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
+    llh_nav0.lat = NAV_LAT0;
+    llh_nav0.lon = NAV_LON0;
+    /* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
+    llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
+    ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0); 
 
-	  // init trilateration algorithm !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//	  trilateration_init(dw1000.anchors); //This is for trilateration
-//	  multilateration_init(dw1000.anchors);	//This is fo multilateration
-
-
+    // init trilateration algorithm !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//    trilateration_init(dw1000.anchors); //This is for trilateration
+//    multilateration_init(dw1000.anchors); //This is fo multilateration
  }//end of the init function
  
  void uwb_dw1000_periodic(void) {
@@ -491,18 +489,17 @@ void uwb_dw1000_resetheading(void) {
  }//end of the report function
  
  void uwb_dw1000_event(void) {
-  	dw1000_arduino_parse(&dw1000);
-  	
+    dw1000_arduino_parse(&dw1000);
+  
  
- 	if (dw1000.updated) {
-      // if no timeout on anchors, run trilateration algorithm
+    if (dw1000.updated) {
+    // if no timeout on anchors, run trilateration algorithm
       
 //    int temp = trilateration_compute(dw1000.anchors, &dw1000.raw_pos); 		//This is for trilateration
 //    int temp = multilateration_compute(dw1000.anchors, &dw1000.raw_pos);	//This is for LS multilateration
-	int temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);			//This is for NLLS multilateration
-	
-	//int temp = 0;
+    int temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);			//This is for NLLS multilateration
 
+    //int temp = 0;
     if (temp == 0) { //check_anchor_timeout(&dw1000) == false &&
         // apply scale and neutral corrections
         scale_position(&dw1000);
@@ -511,14 +508,12 @@ void uwb_dw1000_resetheading(void) {
       }
       if(temp == -1)
       {
-      	// printf("ERROR: trilateration failed \n");
+        // printf("ERROR: trilateration failed \n");
       }
       
     
       dw1000.updated = false;
     }
-	
-
  }//end of the event function
 
 
