@@ -72,19 +72,37 @@
 #define DW1000_TIMEOUT 500
 #endif
 
-
-
-#define DW_NB_DATA 5
-#define START_MARKER 254
-
 static bool _inProgress = false;
 static uint8_t _varByte = 0;
 static uint8_t count = 0;
 static float aveX[5] = {0.f,0.f,0.f,0.f,0.f};
 static float aveY[5] = {0.f,0.f,0.f,0.f,0.f};
-static float aveZ[5] = {0.f,0.f,0.f,0.f,0.f};
+/*static float aveZ[5] = {0.f,0.f,0.f,0.f,0.f};*/
 // static float X_old_kal[6] = {0,0,0,0,0,0};
 // static float X_new_kal[6] = {0,0,0,0,0,0};
+
+
+/* -- Parameters used by Steven in his Code. Not sure if these two lines are needed -- */
+#define UWB_SERIAL_PORT (&((UWB_DW1000_DEV).device))
+struct link_device *external_device = UWB_SERIAL_PORT;
+
+#define DW_NB_DATA 6
+#define START_MARKER 254
+#define UWB_SERIAL_COMM_RANGE 0
+#define UWB_SERIAL_COMM_X 1
+#define UWB_SERIAL_COMM_Y 2
+#define UWB_SERIAL_COMM_NUM_NODES 6 // How many nodes actually are in the network
+#define UWB_SERIAL_COMM_DIST_NUM_NODES UWB_SERIAL_COMM_NUM_NODES-1-DW1000_NB_ANCHORS  // How many distant nodes are in the network, excluding anchors
+
+/* Structure containing the positions of the other UAVs sent over the UWB*/
+struct nodeState {
+  uint8_t nodeAddress;
+  float x;
+  float y;
+  /*bool state_updated[UWB_SERIAL_COMM_NODE_STATE_SIZE];*/
+};
+
+static struct nodeState states[UWB_SERIAL_COMM_DIST_NUM_NODES];
 
 
 /** DW1000 positionning system structure */
@@ -104,7 +122,56 @@ struct DW1000 {
 
 static struct DW1000 dw1000;
 
-void getRanges(float ranges[4]){
+
+//-- These are the functions needed to send data between the UAVs -------------------------------------------
+/**
+ * Function that encodes the high bytes of the serial data to be sent.
+ * Start and end markers are reserved values 254 and 255. In order to be able to send these values,
+ * the payload values 253, 254, and 255 are encoded as 2 bytes, respectively 253 0, 253 1, and 253 2.
+ */
+/*static void encodeHighBytes(uint8_t *send_data, uint8_t msg_size, uint8_t *data_send_buffer, uint8_t *data_total_send)
+{
+  uint8_t data_send_count = msg_size;
+  *data_total_send = 0;
+  for (uint8_t i = 0; i < data_send_count; i++) {
+    if (send_data[i] >= UWB_SERIAL_COMM_SPECIAL_BYTE) {
+      data_send_buffer[*data_total_send] = UWB_SERIAL_COMM_SPECIAL_BYTE;
+      (*data_total_send)++;
+      data_send_buffer[*data_total_send] = send_data[i] - UWB_SERIAL_COMM_SPECIAL_BYTE;
+    } else {
+      data_send_buffer[*data_total_send] = send_data[i];
+    }
+    (*data_total_send)++;
+  }
+}*/
+
+static void sendFloat(uint8_t msg_type, float data)
+{
+/*  static uint8_t data_send_buffer[DW_NB_DATA];
+  static uint8_t data_total_send = 0;*/
+
+  // Make bytes of the float
+  uint8_t floatbyte[4];
+  memcpy(floatbyte, &data, 4);
+  /*encodeHighBytes(floatbyte, 4, data_send_buffer, &data_total_send);*/
+
+  UWB_SERIAL_PORT->put_byte(UWB_SERIAL_PORT->periph, 0, START_MARKER);
+  UWB_SERIAL_PORT->put_byte(UWB_SERIAL_PORT->periph, 0, msg_type);
+
+  for (uint8_t i = 0; i < 4; i++) {
+    UWB_SERIAL_PORT->put_byte(UWB_SERIAL_PORT->periph, 0, floatbyte[i]);
+  }
+  /*for (uint8_t i = 0; i < data_total_send; i++) {
+    UWB_SERIAL_PORT->put_byte(UWB_SERIAL_PORT->periph, 0, data_send_buffer[i]);
+  }*/
+
+  /*UWB_SERIAL_PORT->put_byte(UWB_SERIAL_PORT->periph, 0, UWB_SERIAL_COMM_END_MARKER);*/
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+
+
+/*void getRanges(float ranges[4]){
   ranges[0] = dw1000.anchors[0].distance;
   ranges[1] = dw1000.anchors[1].distance;
   ranges[2] = dw1000.anchors[2].distance;
@@ -116,7 +183,7 @@ void getRanges(float ranges[4]){
   {
     ranges[3] = 0;
   }
-}
+}*/
 
 
 /** Utility function to get float from buffer */
@@ -126,40 +193,96 @@ static inline float float_from_buf(uint8_t* b) {
   return f;
 }
 
+/** Utility function to get message type from buffer */
+static inline uint8_t uint8_t_from_buf(uint8_t* b) {
+  uint8_t f;
+  memcpy((uint8_t*)(&f), b, sizeof(uint8_t));
+  return f;
+}
+
 /** Utility function to get uint16_t from buffer */
 static inline uint16_t uint16_from_buf(uint8_t* b) {
   uint16_t u16 = 0x0000;
   uint8_t temp;
- // memcpy ((uint8_t*)(&u16), b, sizeof(uint8_t));
   memcpy (&temp, b, sizeof(uint8_t));
   return u16+temp;
- // return u16;
 }
 
 /** Utility function to fill anchor from buffer */
 static void fill_anchor_Cust(struct DW1000 *dw) {
   uint16_t id = uint16_from_buf(dw->buf);
-    
-  for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
-    if (dw->anchors[i].id == id) {
-    float norm = sqrtf((dw->anchors[i].distance - float_from_buf(dw->buf+1))*(dw->anchors[i].distance - float_from_buf(dw->buf+1)));
-      if (norm < 2 || dw->anchors[i].distance == 0) { //This is a check to reject outlier distance measurements
-    
-      dw->anchors[i].distance = float_from_buf(dw->buf+1);
-      dw->anchors[i].time = get_sys_time_float();
-      dw->updated = true;
-  //    printf("ID: %d, - Range: %f \n",id,float_from_buf(dw->buf+1));
+  uint8_t msgType = uint8_t_from_buf(dw->buf+1);
+  
+  if (msgType == UWB_SERIAL_COMM_RANGE)  {
+    for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
+      if (dw->anchors[i].id == id) {
+      /*float norm = sqrtf((dw->anchors[i].distance - float_from_buf(dw->buf+2))*(dw->anchors[i].distance - float_from_buf(dw->buf+2))); norm < 2*/
+        float norm = ((dw->anchors[i].distance - float_from_buf(dw->buf+2))*(dw->anchors[i].distance - float_from_buf(dw->buf+2)));
+        if (norm < 4 || dw->anchors[i].distance == 0) { //This is a check to reject outlier distance measurements
+          dw->anchors[i].distance = float_from_buf(dw->buf+2);
+          dw->anchors[i].time = get_sys_time_float();
+          dw->updated = true;
+        }
+        else{
+          dw->anchors[i].distance = dw->anchors[i].distance;
+          dw->anchors[i].time = get_sys_time_float();
+          dw->updated = true;
+        }
+        break;
       }
-      else
-      {
-        dw->anchors[i].distance = dw->anchors[i].distance;
-        dw->anchors[i].time = get_sys_time_float();
-        dw->updated = true;
-    }
-      break;
     }
   }
+  else{
+    for(uint8_t i=0; i< UWB_SERIAL_COMM_DIST_NUM_NODES; i++){
+      if (states[i].nodeAddress == id)
+      {
+        if (msgType == UWB_SERIAL_COMM_X) {
+          states[i].x = float_from_buf(dw->buf+2);
+        }
+        else{
+          states[i].y = float_from_buf(dw->buf+2);
+        }
+        break;
+      }
+    } 
+  }
 }
+
+/**
+ * Function for receiving serial data.
+ * Only receives serial data that is between the start and end markers. Discards all other data.
+ * Stores the received data in received_message, and after decodes the high bytes and copies the final
+ * message to the corresponding message in _messages.
+ */
+/*static void getSerialData(uint8_t *bytes_received)
+{
+  static bool in_progress = false;
+  static uint8_t var_byte;
+  static uint8_t received_message[UWB_SERIAL_COMM_MAX_MESSAGE];
+
+  while (external_device->char_available(external_device->periph)) {
+    var_byte = UWB_SERIAL_PORT->get_byte(UWB_SERIAL_PORT->periph);
+
+    if (var_byte == UWB_SERIAL_COMM_START_MARKER) {
+      (*bytes_received) = 0;
+      in_progress = true;
+    }
+
+    if (in_progress) {
+      if ((*bytes_received) < UWB_SERIAL_COMM_MAX_MESSAGE - 1) {
+        received_message[*bytes_received] = var_byte;
+        (*bytes_received)++;
+      } else {
+        in_progress = false;
+      }
+    }
+
+    if (var_byte == UWB_SERIAL_COMM_END_MARKER) {
+      in_progress = false;
+      decodeHighBytes(*bytes_received, received_message);
+    }
+  }
+}*/
 
 /** Data parsing function */
 static void dw1000_arduino_parse(struct DW1000 *dw)
@@ -190,6 +313,9 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   float y = dw->pos.x * sinf(dw->initial_heading) + dw->pos.y * cosf(dw->initial_heading);
   struct EnuCoor_i enu_pos;
   
+  struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+  float z = (*pos2).z; //-- This just needs to be checked, this might be the problem on takeoff. Rather read in the sonar value
+
   //--Outlier rejection:
   float error = sqrtf((aveX[count-1]-x)*(aveX[count-1]-x)+(aveY[count-1]-y)*(aveY[count-1]-y));
   if (error > 10)
@@ -198,36 +324,36 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
     {
     aveX[count] = aveX[4];
     aveY[count] = aveY[4];
-    aveZ[count] = aveZ[4];
+    /*aveZ[count] = aveZ[4];*/
   }
   else
   {
     aveX[count] = aveX[count-1];
     aveY[count] = aveY[count-1];
-    aveZ[count] = aveZ[count-1];
+    /*aveZ[count] = aveZ[count-1];*/
   }
   }
   else
   {
     aveX[count] = x;
     aveY[count] = y;
-    aveZ[count] = dw->pos.z;
+    /*aveZ[count] = dw->pos.z;*/
   }//--End outlier rejection
   
   // -- Moving average Filter
   x=0;
   y=0;
-  float z=0;
+  /*float z=0;*/
   
-  for(int i=0;i<5;i++)
+  for(uint8_t i=0;i<5;i++)
   {
   x=x+aveX[i];
   y=y+aveY[i];
-  z=z+aveZ[i];
+/*  z=z+aveZ[i];*/
   }
   x=x/5;
   y=y/5;
-  z=z/5;
+/*  z=z/5;*/
   
   if(count == 4)
   {
@@ -389,7 +515,7 @@ static bool check_anchor_timeout(struct DW1000 *dw)
 {
   const float now = get_sys_time_float();
   const float timeout = (float)DW1000_TIMEOUT / 1000.;
-  for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
+  for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
     if (now - dw->anchors[i].time > timeout) {
       return true;
     }
@@ -407,7 +533,7 @@ void local_and_comms_init(void) {
     dw1000.pos.y = 5.f;
     dw1000.pos.z = 0.f;
     dw1000.updated = false;
-    for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
+    for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
     dw1000.anchors[i].distance = 0.f;
     dw1000.anchors[i].time = 0.f;
     dw1000.anchors[i].id = ids[i];
@@ -438,8 +564,8 @@ void local_and_comms_init(void) {
 
 void local_and_comms_periodic(void) {
 	struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
-  /*sendFloat(UWB_SERIAL_COMM_X, (*pos2).x);
-  sendFloat(UWB_SERIAL_COMM_Y, (*pos2).y);*/
+  sendFloat(UWB_SERIAL_COMM_X, (*pos2).x);
+  sendFloat(UWB_SERIAL_COMM_Y, (*pos2).y);
 }
 
 void local_and_comms_report(void) {
