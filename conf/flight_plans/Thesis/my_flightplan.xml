@@ -14,8 +14,7 @@
     <waypoint name="TD" x="5" y="6.2"/> <!-- 51.9906386	4.3767877 -->
     <waypoint lat="51.9906311" lon="4.3767957" name="TRAJECTORY"/>
     <waypoint name="GOAL1" x="4" y="3.5"/>
-    <waypoint name="GOAL2" x="4" y="6.5"/>
-    <waypoint name="A" x="4.8" y="4.8"/> <!-- x="4" y="4.0"-->
+     <waypoint name="A" x="4.8" y="4.8"/> <!-- x="4" y="4.0" -->
     <waypoint name="B" x="3.9" y="5.8"/>
     <waypoint name="C" x="5.6" y="6.8"/>
     <waypoint name="D" x="6.5" y="5.6"/>
@@ -118,6 +117,11 @@
         <stay wp="A"/>
     <!--  </while> -->
     <!--  <deroute block="Standby"/> -->
+    </block>
+    <block name="Spiral">
+      <while cond="LessThan(NavBlockTime(),300)">
+        <circle wp="GOAL1" radius="1+NavBlockTime()*0.015" />
+      </while>
     </block>
     <block key="l" name="Land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
