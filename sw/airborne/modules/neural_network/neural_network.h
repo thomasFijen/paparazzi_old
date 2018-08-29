@@ -27,8 +27,8 @@
 #ifndef NEURAL_NETWORK_H
 #define NEURAL_NETWORK_H
 
-// extern void neural_network_init(void);
-// extern void neural_network_periodic(void);
+ extern void neural_network_init(void);
+ extern void neural_network_periodic(void);
 
 #endif
 

@@ -3,6 +3,14 @@
 <module name="neural_network">
   <doc>
     <description>This fuction implements the NN control necessary for my persistent surveillance mission. The NN used is not fully connected and has two outputs, namely; the x and y velocities. </description>
+    <section name="MS" prefix="MS_">
+      <define name="LENGTH" value="5.0" type="int" description="Length of the Mission Space (along X axis)"/>
+      <define name="BREDTH" value="5.0" type="float" description="Bredth of the Mission Space (Along the Y axis)"/>
+      <define name="GRID_RES" value="1.0" type="float" description="Resolution of the Mission Space discretisation"/>
+      <define name="TIME_STEP" value="0.5" type="float" description="Fequency for calling the NN"/>
+      <define name="GRID_NUM_CELLS" value="25" type="uint8_t" description="Number of cells in the mission space after discretisation"/>
+      <define name="NUM_INPUTS" value="18" type="uint8_t" description="Number of inputs for the NN"/>
+    </section>
   </doc>
   <header>
     <file name="neural_network.h"/>

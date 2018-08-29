@@ -224,7 +224,6 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   x=0;
   y=0;
   
-  
   for(uint8_t i=0;i<5;i++)
   {
     x=x+aveX[i];
