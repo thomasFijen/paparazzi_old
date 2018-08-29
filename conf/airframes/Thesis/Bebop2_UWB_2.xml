@@ -38,7 +38,7 @@
 		<configure name="UWB_DW1000_UART" value="UART2" />
 		<configure name="UWB_DW1000_BAUD" value="B57600" /> 
     </module>
-    <module name="gps" type="uwb"/>   <!-- datalink UWB -->
+    <module name="gps" type="datalink"/>   <!-- datalink uwb -->
 
     <module name="ins" type="hff_extended"/>
      

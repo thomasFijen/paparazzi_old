@@ -1,0 +1,36 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="uwb_localisation_and_comms" dir="decawave">
+  <doc>
+    <description>This function contains the code necessary to localise the UAV, using UWB, as well as the inter-UAV communication</description>
+    <configure name="UWB_DW1000_UART" value="UARTX" description="UART on which arduino and its DW1000 module is connected"/>
+    <configure name="UWB_DW1000_BAUD" value="B9600" description="UART Baudrate, default to 9600"/>
+    <section name="DW1000" prefix="DW1000_">
+      <define name="ANCHORS_IDS" value="1, 2, 3" type="int[]" description="Comma separated list of anchors ID"/>
+      <define name="ANCHORS_POS_X" value="0., 0., 5." type="float[]" description="Comma separated list of anchors ID over X axis"/>
+      <define name="ANCHORS_POS_Y" value="0., 5., 0." type="float[]" description="Comma separated list of anchors ID over Y axis"/>
+      <define name="ANCHORS_POS_Z" value="0., 0., 0." type="float[]" description="Comma separated list of anchors ID over Z axis"/>
+      <define name="OFFSET" value="0., 0., 0." type="float[]" description="Position offset other X, Y and Z axis"/>
+      <define name="SCALE" value="1., 1., 1." type="float[]" description="Position scale factor other X, Y and Z axis"/>
+      <define name="INITIAL_HEADING" value="0." description="Initial heading correction between anchors frame and global frame"/>
+      <define name="NB_ANCHORS" value="3" description="Set number of anchors, only 3 are required/supported at the moment"/>
+    </section>
+  </doc>
+  <header>
+    <file name="uwb_localisation_and_comms.h"/>
+  </header>
+  <init fun="local_and_comms_init()"/>
+  <periodic fun="local_and_comms_periodic()" freq="30" autorun="TRUE"/>
+  <periodic fun="local_and_comms_report()" freq="10" autorun="TRUE"/>
+  <event fun="local_and_comms_event()"/>
+  <makefile>
+    <file name="uwb_localisation_and_comms.c"/>
+    <configure name="UWB_DW1000_UART" case="upper|lower"/>
+    <configure name="UWB_DW1000_BAUD" default="B9600"/>
+    <file name="multilateration_nlls.c"/> <!-- multilateration_ls ; multilateration_nlls ; trilateration -->
+    <define name="USE_$(UWB_DW1000_UART_UPPER)"/>
+    <define name="UWB_DW1000_DEV" value="$(UWB_DW1000_UART_LOWER)"/>
+    <define name="$(UWB_DW1000_UART_UPPER)_BAUD" value="$(UWB_DW1000_BAUD)"/>
+  </makefile>
+</module>
+

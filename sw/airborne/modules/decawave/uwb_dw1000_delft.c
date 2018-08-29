@@ -303,7 +303,7 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   
   
 	// -- Sending the position to the Auto pilot
-  update_uwb(now_ts, &(dw->gps_dw1000));
+  /*update_uwb(now_ts, &(dw->gps_dw1000));*/
 }
 
 //----------------------------------------------------
