@@ -40,7 +40,11 @@ class Disco(ParrotUtils):
         # Parse the extra arguments
         self.parser.add_argument('--min_version', metavar='MIN', default='1.4.1',
                 help='force minimum version allowed')
+<<<<<<< HEAD
         self.parser.add_argument('--max_version', metavar='MAX', default='1.7.0',
+=======
+        self.parser.add_argument('--max_version', metavar='MAX', default='1.7.1',
+>>>>>>> paparazzimaster
                 help='force maximum version allowed')
 
     def parse_extra_args(self, args):
