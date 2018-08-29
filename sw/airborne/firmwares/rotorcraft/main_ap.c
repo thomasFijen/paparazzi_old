@@ -95,9 +95,7 @@ PRINT_CONFIG_VAR(TELEMETRY_FREQUENCY)
  */
 PRINT_CONFIG_VAR(MODULES_FREQUENCY)
 
-#ifndef BARO_PERIODIC_FREQUENCY
-#define BARO_PERIODIC_FREQUENCY 50
-#endif
+/* BARO_PERIODIC_FREQUENCY is defined in the shared/baro_board.makefile and defaults to 50Hz */
 PRINT_CONFIG_VAR(BARO_PERIODIC_FREQUENCY)
 
 #if USE_AHRS && USE_IMU && (defined AHRS_PROPAGATE_FREQUENCY)
@@ -247,6 +245,11 @@ void main_periodic(void)
   autopilot_periodic();
   /* set actuators     */
   //actuators_set(autopilot_get_motors_on());
+
+#if USE_THROTTLE_CURVES
+  throttle_curve_run(commands, autopilot_get_mode());
+#endif
+
 #ifndef INTER_MCU_AP
   SetActuatorsFromCommands(commands, autopilot_get_mode());
 #else

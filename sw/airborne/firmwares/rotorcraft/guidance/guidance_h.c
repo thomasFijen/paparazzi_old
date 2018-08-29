@@ -80,7 +80,6 @@ PRINT_CONFIG_VAR(GUIDANCE_H_USE_SPEED_REF)
 struct HorizontalGuidance guidance_h;
 
 int32_t transition_percentage;
-int32_t transition_theta_offset;
 
 /*
  * internal variables
@@ -604,7 +603,7 @@ void guidance_h_from_nav(bool in_flight)
     FLOAT_ANGLE_NORMALIZE(guidance_h.sp.heading);
 
 #if GUIDANCE_INDI
-    guidance_indi_run(in_flight, guidance_h.sp.heading);
+    guidance_indi_run(guidance_h.sp.heading);
 #else
     /* compute x,y earth commands */
     guidance_h_traj_run(in_flight);
@@ -684,7 +683,7 @@ void guidance_h_guided_run(bool in_flight)
   guidance_h_update_reference();
 
 #if GUIDANCE_INDI
-  guidance_indi_run(in_flight, guidance_h.sp.heading);
+  guidance_indi_run(guidance_h.sp.heading);
 #else
   /* compute x,y earth commands */
   guidance_h_traj_run(in_flight);

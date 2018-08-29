@@ -103,7 +103,7 @@ let check_altitude_srtm = fun a x wgs84 ->
 
 let check_altitude = fun a x ->
   if a < !ground_alt +. !security_height then begin
-    fprintf stderr "\nNOTICE: low altitude (%.0f<%.0f+%.0f) in %s\n\n" a !ground_alt !security_height (Xml.to_string x)
+    fprintf stderr "NOTICE: low altitude (%.0f<%.0f+%.0f) in %s\n" a !ground_alt !security_height (Xml.to_string x)
   end
 
 
@@ -275,7 +275,7 @@ let output_hmode x wp last_wp =
       match hmode with
           "route" ->
             if last_wp = "last_wp" then
-              fprintf stderr "Warning: Deprecated use of 'route' using last waypoint in %s\n"(Xml.to_string x);
+              fprintf stderr "NOTICE: Deprecated use of 'route' using last waypoint in %s\n"(Xml.to_string x);
             lprintf "NavSegment(%s, %s);\n" last_wp wp
         | "direct" -> lprintf "NavGotoWaypoint(%s);\n" wp
         | x -> failwith (sprintf "Unknown hmode '%s'" x)
@@ -960,7 +960,7 @@ let () =
 
     let xml = ExtXml.subst_child "blocks" (index_blocks (element "blocks" [] blocks)) xml in
     let waypoints = Xml.children (ExtXml.child xml "waypoints")
-    and variables = try Xml.children (ExtXml.child xml "variables") with _ -> []
+    and variables_xml = try Xml.children (ExtXml.child xml "variables") with _ -> []
     and blocks = Xml.children (ExtXml.child xml "blocks")
     and global_exceptions = try Xml.children (ExtXml.child xml "exceptions") with _ -> [] in
 
@@ -992,6 +992,11 @@ let () =
       printf "#include \"generated/modules.h\"\n";
       printf "#include \"subsystems/abi.h\"\n";
       printf "#include \"autopilot.h\"\n\n";
+
+      let variables = parse_variables variables_xml in
+      let abi_msgs = extract_abi_msg (Env.paparazzi_home ^ "/conf/abi.xml") "airborne" in
+      List.iter (fun v -> print_var_decl abi_msgs v) variables;
+      printf "\n";
 
       begin
         try
@@ -1097,7 +1102,7 @@ let () =
           _ -> ()
       end;
 
-      begin 
+      begin
         try
           let geofence_max_height = get_float "geofence_max_height" in
           if geofence_max_height < !security_height then
@@ -1124,14 +1129,10 @@ let () =
         match !set_file with
         | Some f ->
             let out_set = open_out f in
-            write_settings !xml_file out_set variables;
+            write_settings !xml_file out_set variables_xml;
             close_out out_set
         | None -> ()
       end;
-      lprintf "\n";
-      let variables = parse_variables variables in
-      let abi_msgs = extract_abi_msg (Env.paparazzi_home ^ "/conf/abi.xml") "airborne" in
-      List.iter (fun v -> print_var_decl abi_msgs v) variables;
 
       lprintf "\n#ifdef NAV_C\n\n";
 
