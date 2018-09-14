@@ -83,7 +83,7 @@
  */
  void transpose_3x4(float out[12], float mat_in[12])
  {
-	for (int i=0; i < 3; i++)
+	for (uint8_t i=0; i < 3; i++)
 	 {
 		 out[i] = mat_in[i*4];
 		 out[i+3] = mat_in[i*4+1];
@@ -117,7 +117,7 @@
 	}
 	else
 	{
-	 	for(int i=0;i<9;i++)
+	 	for(uint8_t i=0;i<9;i++)
 	 	{
 	 		out[i] = (1/det)*adj[i];
 	 	}
@@ -153,7 +153,7 @@
  */
  void mat_multi_3x4_4x3(float mat_out[9], float mat_inA[12], float mat_inB[12])
  {
-	for (int i = 0; i < 3; i++)
+	for (uint8_t i = 0; i < 3; i++)
 	 {
 		 mat_out[i] = mat_inA[0]*mat_inB[i] + mat_inA[1]*mat_inB[i+3] + mat_inA[2]*mat_inB[i+6] + mat_inA[3]*mat_inB[i+9];
 		 mat_out[i+3] = mat_inA[4]*mat_inB[i] + mat_inA[5]*mat_inB[i+3] + mat_inA[6]*mat_inB[i+6] + mat_inA[7]*mat_inB[i+9];
@@ -166,7 +166,7 @@
  */
  void mat_multi_3x3_3x4(float mat_out[12], float mat_inA[9], float mat_inB[12])
  {
-	for (int i = 0; i < 4; i++)
+	for (uint8_t i = 0; i < 4; i++)
 	 {
 		 mat_out[i] = mat_inA[0]*mat_inB[i] + mat_inA[1]*mat_inB[i+4] + mat_inA[2]*mat_inB[i+8];
 		 mat_out[i+4] = mat_inA[3]*mat_inB[i] + mat_inA[4]*mat_inB[i+4] + mat_inA[5]*mat_inB[i+8];

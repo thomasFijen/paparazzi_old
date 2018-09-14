@@ -40,7 +40,7 @@ struct Anchor {
 };
 
 
-extern int multilateration_init(struct Anchor *anchors);
+/*extern int multilateration_init(struct Anchor *anchors);*/
 extern int multilateration_compute(struct Anchor *anchors, struct EnuCoor_f *pos);
 
 extern void mat_transpose_4d(float invOut[16], float mat_in[16]);

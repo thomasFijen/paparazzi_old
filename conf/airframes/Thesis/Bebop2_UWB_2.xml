@@ -30,9 +30,9 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
-    <!-- <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> -->
-      <!-- <define name="AHRS_USE_GPS" value="TRUE"/> -->
+      <!-- <define name="AHRS_USE_GPS_HEADING" value="FALSE"/> --> <!-- Use this for the UWB -->
+      <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> <!-- This is needed for the optitrack -->
+      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/> <!-- Use this for the optitrack -->
     </module>
     <module name="uwb_dw1000_delft"> 
 		<configure name="UWB_DW1000_UART" value="UART2" />
@@ -40,7 +40,7 @@
     </module>
     <module name="gps" type="datalink"/>   <!-- datalink uwb -->
 
-    <module name="ins" type="hff_extended"/>
+    <module name="ins" type="extended"/> <!-- hff_extended extended -->
      
   </firmware>
 
@@ -51,7 +51,7 @@
     
   <module name="video_thread"/>
     <module name="pose_history"/>
-    <module name="cv_opticflow">
+    <!-- <module name="cv_opticflow">
        <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
        <define name="MAX_HORIZON" value="10"/>
        <define name="OPTICFLOW_METHOD" value="0"/>
@@ -64,7 +64,7 @@
        <define name="OPTICFLOW_FOV_H" value="0.665499265"/>
        <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="1.0"/>
        <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.9"/>
-     </module>  
+     </module>  --> 
   </modules>
 
   <commands>

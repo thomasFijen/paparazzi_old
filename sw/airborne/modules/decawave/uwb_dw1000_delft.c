@@ -89,7 +89,7 @@ static uint8_t _varByte = 0;
 static uint8_t count = 0;
 static float aveX[5] = {0.f,0.f,0.f,0.f,0.f};
 static float aveY[5] = {0.f,0.f,0.f,0.f,0.f};
-static float aveZ[5] = {0.f,0.f,0.f,0.f,0.f};
+/*static float aveZ[5] = {0.f,0.f,0.f,0.f,0.f};*/
 // static float X_old_kal[6] = {0,0,0,0,0,0};
 // static float X_new_kal[6] = {0,0,0,0,0,0};
 
@@ -147,22 +147,22 @@ static inline uint16_t uint16_from_buf(uint8_t* b) {
 static void fill_anchor_Cust(struct DW1000 *dw) {
    uint16_t id = uint16_from_buf(dw->buf);
     
-  for (int i = 0; i < DW1000_NB_ANCHORS; i++) {
+  for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
     if (dw->anchors[i].id == id) {
-    float norm = sqrtf((dw->anchors[i].distance - float_from_buf(dw->buf+1))*(dw->anchors[i].distance - float_from_buf(dw->buf+1)));
+      /*float norm = sqrtf((dw->anchors[i].distance - float_from_buf(dw->buf+1))*(dw->anchors[i].distance - float_from_buf(dw->buf+1)));
     	if (norm < 2 || dw->anchors[i].distance == 0) { //This is a check to reject outlier distance measurements
-		
+		*/
 		  dw->anchors[i].distance = float_from_buf(dw->buf+1);
 		  dw->anchors[i].time = get_sys_time_float();
 		  dw->updated = true;
 	//	  printf("ID: %d, - Range: %f \n",id,float_from_buf(dw->buf+1));
-   		}
+   		/*}
     	else
     	{
     		dw->anchors[i].distance = dw->anchors[i].distance;
 		    dw->anchors[i].time = get_sys_time_float();
 		    dw->updated = true;
-		}
+		  }*/
     	
       break;
     }
@@ -200,6 +200,8 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   float x = dw->pos.x * cosf(dw->initial_heading) - dw->pos.y * sinf(dw->initial_heading);
   float y = dw->pos.x * sinf(dw->initial_heading) + dw->pos.y * cosf(dw->initial_heading);
   struct EnuCoor_i enu_pos;
+  struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+  float z = (*pos2).z;
   
   //--Outlier rejection:
   float error = sqrtf((aveX[count-1]-x)*(aveX[count-1]-x)+(aveY[count-1]-y)*(aveY[count-1]-y));
@@ -209,36 +211,36 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   	{
 		aveX[count] = aveX[4];
 		aveY[count] = aveY[4];
-		aveZ[count] = aveZ[4];
+		/*aveZ[count] = aveZ[4];*/
 	}
 	else
 	{
 		aveX[count] = aveX[count-1];
 		aveY[count] = aveY[count-1];
-		aveZ[count] = aveZ[count-1];
+		/*aveZ[count] = aveZ[count-1];*/
 	}
   }
   else
   {
 	  aveX[count] = x;
 	  aveY[count] = y;
-	  aveZ[count] = dw->pos.z;
+	  /*aveZ[count] = dw->pos.z;*/
   }//--End outlier rejection
   
   // -- Moving average Filter
   x=0;
   y=0;
-  float z=0;
+  /*float z=0;*/
   
-  for(int i=0;i<5;i++)
+  for(uint8_t i=0;i<5;i++)
   {
 	x=x+aveX[i];
  	y=y+aveY[i];
-	z=z+aveZ[i];
+	/*z=z+aveZ[i];*/
   }
   x=x/5;
   y=y/5;
-  z=z/5;
+  /*z=z/5;*/
   
   if(count == 4)
   {
@@ -297,10 +299,6 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
 
   // publish new GPS data
   uint32_t now_ts = get_sys_time_usec();
-  
-    //printf("%f,%f,%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance,x,y);
-  //printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw->anchors[0].distance,dw->anchors[1].distance,dw->anchors[2].distance,dw->anchors[3].distance,x,y,(*pos2).x,(*pos2).y,(*pos2).z); 
-  
   
 	// -- Sending the position to the Auto pilot
   /*update_uwb(now_ts, &(dw->gps_dw1000));*/
@@ -499,7 +497,7 @@ void uwb_dw1000_resetheading(void) {
       
 //    int temp = trilateration_compute(dw1000.anchors, &dw1000.raw_pos); 		//This is for trilateration
 //    int temp = multilateration_compute(dw1000.anchors, &dw1000.raw_pos);	//This is for LS multilateration
-	int temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);			//This is for NLLS multilateration
+	uint8_t temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);			//This is for NLLS multilateration
 	
 	//int temp = 0;
 

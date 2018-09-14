@@ -109,6 +109,11 @@
       <go wp="D"/>
       <stay wp="D"/>
     </block>
+    <block name="Circle">
+      <while cond="TRUE">
+        <circle wp="GOAL1" radius="1" />
+      </while>
+    </block>
     <block name="flySquare">
    <!--   <while cond="LessThan(60,block_time)"> -->
         <go from="A" hmode="route" wp="B"/>
