@@ -1,0 +1,386 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"MS_",
+				"MS_NUM_INPUTS"
+			],
+			[
+				"node_",
+				"node_out"
+			],
+			[
+				"MS",
+				"MS_BREDTH"
+			],
+			[
+				"activation",
+				"activationFunction"
+			],
+			[
+				"connections",
+				"connectionsInit"
+			],
+			[
+				"uint",
+				"uint8_t"
+			],
+			[
+				"DW100",
+				"DW1000_NB_ANCHORS"
+			],
+			[
+				"Tr",
+				"TRUE"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 136.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/home/thomas/paparazzi_old"
+	],
+	"file_history":
+	[
+		"/home/thomas/paparazzi_old/sw/airborne/modules/decawave/decawave_anchorless_communication.c",
+		"/home/thomas/paparazzi_old/sw/airborne/modules/decawave/uwb_localisation_and_comms.c",
+		"/home/thomas/paparazzi_old/sw/airborne/modules/decawave/multilateration_ls.h",
+		"/home/thomas/paparazzi_old/sw/airborne/modules/decawave/multilateration_nlls.c",
+		"/home/thomas/paparazzi_old/sw/airborne/modules/decawave/uwb_dw1000_delft.c",
+		"/home/thomas/paparazzi_old/conf/flight_plans/tudelft/course2017_avoid_orange_cyberzoo.xml",
+		"/home/thomas/paparazzi/var/include/pprzlink/messages.h",
+		"/home/thomas/paparazzi/sw/airborne/firmwares/rotorcraft/autopilot_firmware.c",
+		"/home/thomas/paparazzi/sw/airborne/subsystems/datalink/telemetry_common.h",
+		"/home/thomas/paparazzi/sw/airborne/subsystems/datalink/telemetry.h",
+		"/home/thomas/paparazzi/sw/airborne/subsystems/datalink/telemetry.c",
+		"/home/thomas/paparazzi/var/messages.xml",
+		"/home/thomas/paparazzi/conf/airframes/Thesis/Bebop2_UWB_2.xml",
+		"/home/thomas/paparazzi/sw/airborne/modules/decawave/uwb_dw1000_delft.c",
+		"/home/thomas/paparazzi/conf/modules/uwb_dw1000_delft.xml",
+		"/home/thomas/paparazzi/sw/airborne/modules/neural_network/neural_network.c",
+		"/home/thomas/paparazzi/conf/modules/neural_network.xml",
+		"/home/thomas/paparazzi/sw/airborne/modules/neural_network/neural_network.h",
+		"/home/thomas/paparazzi/sw/airborne/subsystems/datalink/downlink.h",
+		"/home/thomas/paparazzi/conf/flight_plans/Thesis/my_flightplan.xml",
+		"/home/thomas/paparazzi/sw/airborne/math/pprz_geodetic_float.h",
+		"/home/thomas/paparazzi/sw/airborne/state.c",
+		"/home/thomas/paparazzi/sw/airborne/state.h",
+		"/home/thomas/paparazzi/conf/modules/ins_extended.xml",
+		"/home/thomas/paparazzi/sw/airborne/subsystems/ins/vf_extended_float.c",
+		"/home/thomas/paparazzi/sw/airborne/subsystems/ins/ins_int.c",
+		"/home/thomas/paparazzi/conf/settings/estimation/ins_sonar.xml",
+		"/home/thomas/Arduino/libraries/arduino-dw1000/src/ConnectedRanging.cpp",
+		"/home/thomas/paparazzi/conf/modules/uwb_localisation_and_comms.xml",
+		"/home/thomas/paparazzi/conf/modules/decawave_anchorless_communication.xml",
+		"/home/thomas/paparazzi/sw/airborne/modules/decawave/decawave_anchorless_communication.c",
+		"/home/thomas/Downloads/paparazzi-ConnectedRanging/conf/modules/Decawave_Serial_Communication.xml",
+		"/home/thomas/paparazzi/sw/airborne/modules/decawave/uwb_localisation_and_comms.c",
+		"/home/thomas/Downloads/paparazzi-ConnectedRanging/conf/airframes/Steven/Steven_bebop_indi_optitrack.xml",
+		"/home/thomas/Downloads/paparazzi-ConnectedRanging/sw/airborne/modules/decawave/Serial/Serial_Communication.c",
+		"/home/thomas/Downloads/paparazzi-ConnectedRanging/conf/airframes/Steven/Steven_bebop_indi_simple_optitrack.xml",
+		"/home/thomas/Downloads/paparazzi-ConnectedRanging/conf/airframes/Steven/Steven_bebop_indi_simple_optitrack_gaintune.xml",
+		"/home/thomas/paparazzi/sw/airborne/modules/decawave/uwb_localisation_and_comms.h",
+		"/home/thomas/paparazzi/var/include/abi_messages.h",
+		"/home/thomas/paparazzi/sw/airborne/modules/decawave/decawave_anchorless_communication.h",
+		"/home/thomas/paparazzi/conf/airframes/Thesis/Bebop2_UWB_withComms.xml",
+		"/home/thomas/paparazzi/sw/airborne/modules/decawave/uwb_dw1000_delft.h",
+		"/home/thomas/paparazzi/conf/userconf/tudelft/conf_Thomas.xml",
+		"/home/thomas/paparazzi/conf/modules/dw1000_arduino.xml",
+		"/home/thomas/paparazzi/sw/airborne/modules/decawave/multilateration_nlls.c",
+		"/home/thomas/paparazzi/sw/airborne/modules/decawave/trilateration.c",
+		"//",
+		"/home/thomas/paparazzi/conf/airframes/tudelft/bebop_orangeavoid_course2017.xml",
+		"/home/thomas/paparazzi/conf/flight_plans/tudelft/course2017_avoid_orange_cyberzoo.xml",
+		"/home/thomas/paparazzi/var/aircrafts/simulate_orange_avoid/conf/flight_plans/course2017_avoid_orange_cyberzoo.xml",
+		"/home/thomas/paparazzi/sw/airborne/subsystems/gps/gps_uwb.c",
+		"/home/thomas/paparazzi/sw/airborne/subsystems/gps.c",
+		"/home/thomas/paparazzi/sw/airborne/subsystems/gps/gps_datalink.c",
+		"/home/thomas/paparazzi/conf/airframes/tudelft/bebop2_opticflow.xml"
+	],
+	"find":
+	{
+		"height": 24.0
+	},
+	"find_in_files":
+	{
+		"height": 98.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 24.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "paparazzi.sublime-project",
+	"replace":
+	{
+		"height": 44.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"uwb",
+				"sw/airborne/modules/decawave/uwb_dw1000_delft.c"
+			],
+			[
+				"nn",
+				"sw/airborne/modules/neural_network/neural_network.h"
+			],
+			[
+				"my_fli",
+				"conf/flight_plans/Thesis/my_flightplan.xml"
+			],
+			[
+				"uwb_l",
+				"sw/airborne/modules/decawave/uwb_localisation_and_comms.c"
+			],
+			[
+				"mult",
+				"sw/airborne/modules/decawave/multilateration_ls.h"
+			],
+			[
+				"avoid_",
+				"conf/flight_plans/tudelft/course2017_avoid_orange_cyberzoo.xml"
+			],
+			[
+				"uwb_",
+				"sw/airborne/modules/decawave/uwb_dw1000_delft.c"
+			],
+			[
+				"telemetry_",
+				"sw/airborne/subsystems/datalink/telemetry_common.h"
+			],
+			[
+				"tele",
+				"sw/airborne/subsystems/datalink/telemetry.c"
+			],
+			[
+				"message",
+				"var/messages.xml"
+			],
+			[
+				"bebop2_",
+				"conf/airframes/Thesis/Bebop2_UWB_2.xml"
+			],
+			[
+				"stat",
+				"sw/airborne/state.h"
+			],
+			[
+				"state",
+				"sw/airborne/state.c"
+			],
+			[
+				"ins_in",
+				"sw/airborne/subsystems/ins/ins_int.c"
+			],
+			[
+				"ins_s",
+				"conf/settings/estimation/ins_sonar.xml"
+			],
+			[
+				"vf_ex",
+				"sw/airborne/subsystems/ins/vf_extended_float.c"
+			],
+			[
+				"ins_ext",
+				"conf/modules/ins_extended.xml"
+			],
+			[
+				"neural",
+				"sw/airborne/modules/neural_network/neural_network.h"
+			],
+			[
+				"neura",
+				"conf/modules/neural_network.xml"
+			],
+			[
+				"deca",
+				"conf/modules/decawave_anchorless_communication.xml"
+			],
+			[
+				"uwb_lo",
+				"conf/modules/uwb_localisation_and_comms.xml"
+			],
+			[
+				"uwb_dw",
+				"sw/airborne/modules/decawave/uwb_dw1000_delft.h"
+			],
+			[
+				"uwb_local",
+				"sw/airborne/modules/decawave/uwb_localisation_and_comms.h"
+			],
+			[
+				"uwb_comms",
+				"sw/airborne/modules/decawave/uwb_localisation_and_comms.c"
+			],
+			[
+				"avoid_or",
+				"conf/airframes/tudelft/bebop_orangeavoid_course2017.xml"
+			],
+			[
+				"avoid_o",
+				"conf/flight_plans/tudelft/course2017_avoid_orange_cyberzoo.xml"
+			],
+			[
+				"avoid",
+				"conf/flight_plans/tudelft/course2017_avoid_orange_cyberzoo.xml"
+			],
+			[
+				"gps_da",
+				"sw/airborne/subsystems/gps/gps_datalink.c"
+			],
+			[
+				"bebop2",
+				"conf/airframes/tudelft/bebop2_opticflow.xml"
+			],
+			[
+				"cours",
+				"var/aircrafts/simulate_orange_avoid/conf/flight_plans/course2017_avoid_orange_cyberzoo.xml"
+			],
+			[
+				"avoi",
+				"conf/flight_plans/tudelft/course2017_avoid_orange_cyberzoo.xml"
+			],
+			[
+				"gps.c",
+				"sw/airborne/subsystems/gps.c"
+			],
+			[
+				"my_",
+				"conf/flight_plans/Thesis/my_flightplan.xml"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 203.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
