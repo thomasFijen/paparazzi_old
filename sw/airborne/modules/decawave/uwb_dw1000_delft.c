@@ -326,15 +326,15 @@ void kalman_filter(float out[6], float X_old[6], float u[2], float x, float y)
 	float temp2_2x1[2] = {x,y};
 	
 	//Determine X_hat from the model 
-    mat_mult_6x6_6x1(temp_6x1, phi, X_old);
-    mat_mult_6x2_2x1(temp2_6x1, gamma, u);
-    mat_add_6x1(X_hat,temp_6x1,temp2_6x1);
+  mat_mult_6x6_6x1(temp_6x1, phi, X_old);
+  mat_mult_6x2_2x1(temp2_6x1, gamma, u);
+  mat_add_6x1(X_hat,temp_6x1,temp2_6x1);
     
-    //Update the estimate with the Kalman gain
-    mat_mult_2x6_6x1(temp_2x1,Cd,X_hat);
-    mat_subtract_2x1(temp_2x1,temp2_2x1,temp_2x1);
-    mat_mult_6x2_2x1(temp_6x1,K,temp_2x1);
-    mat_add_6x1(out,X_hat,temp_6x1);
+  //Update the estimate with the Kalman gain
+  mat_mult_2x6_6x1(temp_2x1,Cd,X_hat);
+  mat_subtract_2x1(temp_2x1,temp2_2x1,temp_2x1);
+  mat_mult_6x2_2x1(temp_6x1,K,temp_2x1);
+  mat_add_6x1(out,X_hat,temp_6x1);
     
     
 }
