@@ -1,0 +1,127 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="1.4" ground_alt="0" lat0="51.9905836" lon0="4.3767138" max_dist_from_home="10" name="My Flightplan" security_height="0.4">
+  <header>
+    #include "subsystems/datalink/datalink.h"
+    #include "subsystems/electrical.h"
+    #include "subsystems/radio_control.h"
+    #include "subsystems/ahrs.h"
+    #include "modules/neural_network/neural_network.h"
+</header>
+  <waypoints>
+    <waypoint lat="51.9906311" lon="4.3767957" name="HOME"/>
+    <waypoint lat="51.9906311" lon="4.3767957" name="CLIMB"/>
+    <waypoint lat="51.9906311" lon="4.3767957" name="STDBY"/>
+    <waypoint name="TD" x="5" y="6.2"/> <!-- 51.9906386	4.3767877 -->
+    <waypoint lat="51.9906311" lon="4.3767957" name="TRAJECTORY"/>
+    <waypoint name="GOAL1" x="4" y="3.5"/>
+    <waypoint name="beacon1" x="4.45" y="0.0"/> <!--x="4.3" y="0.2" __ 51.9905907	4.3767699--> 
+    <waypoint name="beacon2" x="9.1" y="3.2"/> <!--x="10.5" y="4.7" __ 51.9906108	4.3768470-->
+    <waypoint name="beacon3" x="6.2" y="11.2"/> <!--x="6.0" y="10.9" __ 51.9906835	4.3768078-->
+    <waypoint name="beacon4" x="0.4" y="7.8"/> <!-- x="0.0" y="6.3" __ lat="51.990640" lon="4.376710" 51.9906539	4.3767220--> 
+    <waypoint lat="51.9905836" lon="4.3767729" name="_CZ1"/>
+    <waypoint lat="51.9906365" lon="4.3767138" name="_CZ2"/>
+    <waypoint lat="51.990680" lon="4.376805" name="_CZ3"/>
+    <waypoint lat="51.9906226" lon="4.3768699" name="_CZ4"/>
+    <waypoint lat="51.990594" lon="4.376776" name="_OZ1"/>
+    <waypoint lat="51.990636" lon="4.376733" name="_OZ2"/>
+    <waypoint lat="51.990671" lon="4.376806" name="_OZ3"/>
+    <waypoint lat="51.990624" lon="4.376852" name="_OZ4"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="CyberZoo">
+      <corner name="_CZ1"/>
+      <corner name="_CZ2"/>
+      <corner name="_CZ3"/>
+      <corner name="_CZ4"/>
+    </sector>
+    <sector color="#FF9922" name="ObstacleZone">
+      <corner name="_OZ1"/>
+      <corner name="_OZ2"/>
+      <corner name="_OZ3"/>
+      <corner name="_OZ4"/>
+    </sector>
+  </sectors>
+  <exceptions>
+<!--     <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) &&
+      !(IndexOfBlock('Holding point') > nav_block) &&
+      !(nav_block >= IndexOfBlock('Land here')) &&
+      (autopilot_in_flight() == true) )" deroute="Land here"/> -->
+    <exception cond="((GetPosAlt() > 3.5) && 
+      !(IndexOfBlock('Holding point') > nav_block) &&
+      !(nav_block >= IndexOfBlock('Land here')) &&
+      (autopilot_in_flight() == true) )" deroute="Land here"/>
+    <exception cond="((GetPosAlt() > 4.5) &&
+      !(IndexOfBlock('Holding point') > nav_block) &&
+      (autopilot_in_flight() == true) )" deroute="Land here"/>
+  <!--  <exception cond="(electrical.bat_low &&
+      !(IndexOfBlock('Holding point') > nav_block) &&
+      !(nav_block >= IndexOfBlock('Land here')) &&
+      (autopilot_in_flight() == true) )" deroute="Land here"/> -->
+    <exception cond="(electrical.bat_critical &&
+      !(IndexOfBlock('Holding point') > nav_block) &&
+      !(nav_block >= IndexOfBlock('Land here')) &&
+      (autopilot_in_flight() == true) )" deroute="Land here"/>
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 2)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+    </block>
+    <block name="Holding point">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Start Engine">
+      <call_once fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+      <exception cond="stateGetPositionEnu_f()->z > 0.5" deroute="Standby"/>
+      <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
+      <stay climb="0.4" vmode="climb" wp="STDBY"/>
+    </block>
+    <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
+      <!-- <call_once fun="NavSetWaypointHere(WP_STDBY)"/> -->
+      <stay wp="STDBY"/>
+    </block>
+    <block name="Circle">
+      <while cond="TRUE">
+        <circle wp="GOAL1" radius="1" />
+      </while>
+    </block>
+    <!-- This block implements the NN survey mission. This should be used in Guided Mode-->
+    <block name="Survey">
+
+    </block>
+    
+    <block key="l" name="Land here" strip_button="Land Here" strip_icon="land-right.png">
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <go wp="TD"/>
+      <deroute block="Flare"/>
+    </block>
+    <block name="Land">
+      <go wp="TD"/>
+      <deroute block="Flare"/>
+    </block>
+    <block name="Flare">
+      <exception cond="NavDetectGround()" deroute="Holding point"/>
+      <exception cond="!nav_is_in_flight()" deroute="Landed"/>
+      <exception cond="0.10 > GetPosAlt()" deroute="Landed"/>
+      <call_once fun="NavStartDetectGround()"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="Landed">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Force Kill Engines">
+      <call_once fun="autopilot_set_motors_on(FALSE)"/>
+      <while cond="1"/>
+    </block>
+  </blocks>
+</flight_plan>

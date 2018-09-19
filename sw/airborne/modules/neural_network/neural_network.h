@@ -24,11 +24,18 @@
  * The NN used is not fully connected and has two outputs, namely; the x and y velocities.
  */
 
+#ifndef MS_NUM_OUTPUTS
+#define MS_NUM_OUTPUTS 2
+#endif
+
 #ifndef NEURAL_NETWORK_H
 #define NEURAL_NETWORK_H
 
+float activationFunction(float x);
+ extern void calcInputs(void); 
+ extern void calcNN(float outputs[MS_NUM_OUTPUTS]);
  extern void neural_network_init(void);
- extern void neural_network_periodic(void);
+// extern void neural_network_periodic(void);
 
 #endif
 

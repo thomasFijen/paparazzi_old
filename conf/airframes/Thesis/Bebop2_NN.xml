@@ -1,15 +1,14 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-<airframe name="bebop2_uwb_2">
-  <description>Bebop2, indoor using UWB
+<airframe name="bebop2_NN">
+  <description>Bebop2, indoor using optitrack and otical flow
   </description>
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2" > 
  <!--  <configure name="HOST" value="192.168.42.$(AC_ID)"/>
     <configure name="MODEM_HOST" value="192.168.42.43"/>
-    
-     define	name="GPS_TIMEOUT" value="10"/-->
+    -->
     </target>
 
     <target name="nps" board="pc">
@@ -18,7 +17,7 @@
     </target>
 
     <!-- <define name="LIMIT_EVENT_POLLING" value="TRUE"/>  this should improve the performance--> 
-    <define name="USE_SONAR" value="TRUE"/>
+    <define name="USE_SONAR" value="FALSE"/>
     
 	  <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
@@ -34,10 +33,11 @@
       <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> <!-- This is needed for the optitrack -->
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/> <!-- Use this for the optitrack -->
     </module>
-    <module name="uwb_dw1000_delft"> 
+ <!--   <module name="uwb_dw1000_delft"> 
 		<configure name="UWB_DW1000_UART" value="UART2" />
 		<configure name="UWB_DW1000_BAUD" value="B57600" /> 
-    </module>
+    </module> -->
+    <module name="neural_network"/>
     <module name="gps" type="datalink"/>   <!-- datalink uwb -->
 
     <module name="ins" type="extended"/> <!-- hff_extended extended -->
@@ -234,6 +234,21 @@
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
   </section>
   
+  <section name="MS" prefix="MS_" >
+  	  <define name="LENGTH" value="20.0" type="float" />
+      <define name="BREDTH" value="20.0" type="float" />
+      <define name="GRID_RES" value="1.0" type="float" />
+      <define name="TIME_STEP" value="1.0" type="float" />
+      <define name="GRID_NUM_CELLS" value="400" type="uint8_t" />
+      <define name="NUM_INPUTS" value="18" type="uint8_t" />
+      <define name="NUM_OUTPUTS" value="2" type="uint8_t" />
+      <define name="SWARM_SIZE" value="2" type="uint8_t" />
+      <define name="NUM_NODES" value="26" type="uint8_t" />
+      <define name="NUM_CONNECT" value="51" type="uint8_t" />
+      <define name="MAX_VEL" value="1.7" type="float" />
+      <define name="CURRENT_ID" value="0" type="uint8_t" />
+  </section>
+  
   <!-- I added this for the UWB beacons, Trillateration -->
 <!--	<section name="DW1000" prefix="DW1000_">
 		<define name="ANCHORS_IDS" value="1, 2, 3" type="int[]"/>
@@ -261,18 +276,7 @@
 		<define name="NB_ANCHORS" value="4"/>
 	</section>  -->
 	
-		  <!-- NLLS multilateraton: Own coordinate system... /-->
-	<section name="DW1000" prefix="DW1000_">
-		<define name="ANCHORS_IDS" value="1, 2, 3, 4" type="int[]"/>
-		<define name="ANCHORS_POS_X" value="0," type="float[]"/> 
-		<define name="ANCHORS_POS_Y" value="0,0," type="float[]"/>
-		<define name="ANCHORS_POS_Z" value="0.8, 0.8, 0.15, 0." type="float[]"/>
-		<define name="OFFSET" value="0.0, 0.0, 0.0, 0.0" type="float[]"/>
-		<define name="SCALE" value="1.0,1.0,1.0,1.0" type="float[]"/>
-		<define name="INITIAL_HEADING" value="0.0"/>
-		<define name="NB_ANCHORS" value="4"/>
-	</section>  
-	
+
 	<!--	<section name="DW1000" prefix="DW1000_">
 		<define name="ANCHORS_IDS" value="1, 2, 3, 4" type="int[]"/>
 		<define name="ANCHORS_POS_X" value="0, 2.7, 1.5, 0" type="float[]"/>

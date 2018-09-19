@@ -70,11 +70,21 @@
 #define MS_NUM_CONNECT 51
 #endif
 
+#ifndef MS_MAX_VEL
+#define MS_MAX_VEL 1.7f
+#endif
+
+#ifndef MS_CURRENT_ID
+#define MS_CURRENT_ID 0
+#endif
+
+#define PI 3.14159265
+
 /** Mission Space Parameter structure */
 struct MS_Struct {
-    uint8_t MS[MS_BREDTH/MS_GRID_RES][MS_LENGTH/MS_GRID_RES];
-    float sensorRange = 10;
-
+    uint8_t MS[20][20];
+    float sensorRange;
+	struct EnuCoor_f uavs[MS_SWARM_SIZE];
 };
 
 /** Structure containing NN parameters */
@@ -98,8 +108,17 @@ static struct NN_struct nnParams;
 
 /** This function determines the inputs into the NN */
 void calcInputs(){
+/* This is used for testing in Eclipse
+    struct EnuCoor_f UAV;
+    UAV.x = 10.5;
+    UAV.y = 10.5;
+    UAV.z = 10; 
+    
+    struct EnuCoor_f *pos = &(UAV);
+    */
 
     struct EnuCoor_f *pos = stateGetPositionEnu_f();
+    
 
     /* Default range values */
     for (uint8_t i = 0; i < MS_NUM_INPUTS; i++) {
@@ -112,12 +131,8 @@ void calcInputs(){
         /* Get current cell index */
         currentCell_x = (uint8_t) (*pos).x/MS_GRID_RES;
         currentCell_y = (uint8_t) (*pos).y/MS_GRID_RES;
-        printf("\nX: %i",currentCell_x);
-        printf("\nX: %i",currentCell_y);
 
-        //TOD: Add conditional check for distance to other drones
-
-        /* Antennae Function values */  // TODO !!!!!!!!
+        /* Antennae Function values */
         uint8_t numCells = msParams.sensorRange / MS_GRID_RES;
 
         nnParams.node_out[0] = MS_GRID_RES*(currentCell_y+1)-(*pos).y;
@@ -182,7 +197,6 @@ void calcInputs(){
 
         /* Diagonal antennae */
         float stepSize = MS_GRID_RES/cosf(PI/4);
-        printf("\n Step size: %f",stepSize);
         nnParams.node_out[1] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x+1))*((*pos).x-MS_GRID_RES*(currentCell_x+1))+((*pos).y-MS_GRID_RES*(currentCell_y+1))*((*pos).y-MS_GRID_RES*(currentCell_y+1)));
         for(uint8_t i = 1; i <= numCells; i++) {
             if(msParams.MS[currentCell_y+i][currentCell_x+i] != 0) {
@@ -199,11 +213,6 @@ void calcInputs(){
         }
 
         nnParams.node_out[3] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x+1))*((*pos).x-MS_GRID_RES*(currentCell_x+1))+((*pos).y-MS_GRID_RES*(currentCell_y))*((*pos).y-MS_GRID_RES*(currentCell_y)));
-     /*   if(fmodf((*pos).x,MS_GRID_RES) == 0 && fmodf((*pos).y,MS_GRID_RES) == 0) {
-            nnParams.node_out[3] = stepSize;
-        }else {
-            nnParams.node_out[3] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x+1))*((*pos).x-MS_GRID_RES*(currentCell_x+1))+((*pos).y-MS_GRID_RES*(currentCell_y))*((*pos).y-MS_GRID_RES*(currentCell_y)));
-        }*/
         nnParams.node_out[3] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x+1))*((*pos).x-MS_GRID_RES*(currentCell_x+1))+((*pos).y-MS_GRID_RES*(currentCell_y))*((*pos).y-MS_GRID_RES*(currentCell_y)));
         for(uint8_t i = 1; i <= numCells; i++) {
             if(msParams.MS[currentCell_y-i][currentCell_x+i] != 0) {
@@ -248,17 +257,50 @@ void calcInputs(){
                 break;
             }
         }
-        
+
         /* Correcting the range measurements to account for other UAVs */
         for(uint8_t i = 0; i < MS_SWARM_SIZE; i++){
-            if (i != ID) {
-                uint8_t agentCell_x = (uint8_t) msParams.uavs[i].x/MS_GRID_RES;
-                uint8_t agentCell_y = (uint8_t) msParams.uavs[i].y/MS_GRID_RES;
-                if(agentCell_x == currentCell_x){
-                    float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
-                }
-                if (agentCell_y == currentCell_y){
-                    float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+            if (i != MS_CURRENT_ID) {
+                if (msParams.uavs[i].x >= 0 && msParams.uavs[i].x <= MS_LENGTH && msParams.uavs[i].y >= 0 && msParams.uavs[i].y <= MS_BREDTH) {
+                    uint8_t agentCell_x = (uint8_t) msParams.uavs[i].x/MS_GRID_RES;
+                    uint8_t agentCell_y = (uint8_t) msParams.uavs[i].y/MS_GRID_RES;
+                    if(agentCell_x == currentCell_x){
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        if(agentCell_y >= currentCell_y && distance < nnParams.node_out[0]){
+                            nnParams.node_out[0] = distance;
+                        } else if (agentCell_y < currentCell_y && distance < nnParams.node_out[4]) {
+                            nnParams.node_out[4] = distance;
+                        }
+                    }
+                    else if (agentCell_y == currentCell_y){
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        if(agentCell_x >= currentCell_x && distance < nnParams.node_out[2]){
+                            nnParams.node_out[2] = distance;
+                        } else if (agentCell_x < currentCell_x && distance < nnParams.node_out[6]) {
+                            nnParams.node_out[6] = distance;
+                        }
+                    }
+                    else if ((agentCell_y-currentCell_y) == (agentCell_x-currentCell_x) && agentCell_x >= currentCell_x ) {
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        if(distance < nnParams.node_out[1]){
+                            nnParams.node_out[1] = distance;
+                        }
+                    } else if ((currentCell_y-agentCell_y) == (agentCell_x-currentCell_x) && agentCell_x >= currentCell_x){
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        if(distance < nnParams.node_out[3]){
+                            nnParams.node_out[3] = distance;
+                        }
+                    } else if ((currentCell_y-agentCell_y) == (currentCell_x-agentCell_x) && agentCell_x < currentCell_x) {
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        if(distance < nnParams.node_out[5]){
+                            nnParams.node_out[5] = distance;
+                        }
+                    } else if ((agentCell_y-currentCell_y) == (currentCell_x-agentCell_x) && agentCell_x < currentCell_x) {
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        if(distance < nnParams.node_out[7]){
+                            nnParams.node_out[7] = distance;
+                        }
+                    }
                 }
             }
 
@@ -284,6 +326,14 @@ void calcInputs(){
     nnParams.node_out[5] = nnParams.node_out[5]/msParams.sensorRange;
     nnParams.node_out[6] = nnParams.node_out[6]/msParams.sensorRange;
     nnParams.node_out[7] = nnParams.node_out[7]/msParams.sensorRange;
+    nnParams.node_out[8] = nnParams.node_out[8]/100.0f;
+    nnParams.node_out[9] = nnParams.node_out[9]/100.0f;
+    nnParams.node_out[10] = nnParams.node_out[10]/100.0f;
+    nnParams.node_out[11] = nnParams.node_out[11]/100.0f;
+    nnParams.node_out[12] = nnParams.node_out[12]/100.0f;
+    nnParams.node_out[13] = nnParams.node_out[13]/100.0f;
+    nnParams.node_out[14] = nnParams.node_out[14]/100.0f;
+    nnParams.node_out[15] = nnParams.node_out[15]/100.0f;
 }
 
 /** This function implements the activation function of the NN */
@@ -375,23 +425,42 @@ void calcNN(float outputs[MS_NUM_OUTPUTS]) {
     for(uint8_t numOutputs = 0; numOutputs < MS_NUM_OUTPUTS; numOutputs++){
         outputs[numOutputs] = nnParams.node_out[nnParams.outputIndex[numOutputs]];
     }
+    
+    /* Converting the NN outputs to velocities */
+    float theta;
+    if (outputs[0] != 0) {
+        theta = atan(abs(outputs[1]/outputs[0]));
+    } else {
+    	theta = PI/2;
+    }
+    outputs[0] = outputs[0]*MS_MAX_VEL*cosf(theta);
+    outputs[1] = outputs[1]*MS_MAX_VEL*sinf(theta);
 }
 
 void neural_network_init(void) {
     /** Initialize the Mission Space age grid */
-    for (uint8_t i = 0; i < MS_LENGTH/MS_GRID_RES; i++){
-        for (uint8_t j = 0; j < MS_BREDTH/MS_GRID_RES; j++) {
-            if( j == 0 || j == MS_BREDTH/MS_GRID_RES-MS_GRID_RES) {
-                msParams.MS[j][i] = 0;
+    for (uint8_t x = 0; x < MS_LENGTH/MS_GRID_RES; x++){
+        for (uint8_t y = 0; y < MS_BREDTH/MS_GRID_RES; y++) {
+            if( y == 0 || y == MS_BREDTH/MS_GRID_RES-MS_GRID_RES) {
+                msParams.MS[y][x] = 0;
             }
-            else if(i == 0 || i == MS_LENGTH/MS_GRID_RES - MS_GRID_RES){
-                msParams.MS[j][i] = 0;
+            else if(x == 0 || x == MS_LENGTH/MS_GRID_RES - MS_GRID_RES){
+                msParams.MS[y][x] = 0;
             }
             else {
-                msParams.MS[j][i] = 1;
+                msParams.MS[y][x] = 1;
             }
         }
     }
+    
+    msParams.sensorRange = 10;
+    /* Starting positions of the Drones */
+    msParams.uavs[0].x = 3;
+    msParams.uavs[0].y = 3;
+    msParams.uavs[1].x = 12;
+    msParams.uavs[1].y =9;
+    msParams.uavs[2].x = 11;
+    msParams.uavs[2].y = 11;
 
     /* Initialise the NN structure */
     int8_t assign[26] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,21,68,93,210,19,108,153,20};
@@ -413,8 +482,6 @@ void neural_network_init(void) {
     memcpy(nnParams.connectFrom, connectFrom, 15*sizeof(uint8_t));
 }
 
-void neural_network_periodic(void) {
+/*void neural_network_periodic(void) {
     
-}
-
-
+}*/

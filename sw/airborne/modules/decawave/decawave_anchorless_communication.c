@@ -244,7 +244,7 @@ static void getSerialData(uint8_t *bytes_received)
 }
 
 /**
- * Initialization functio
+ * Initialization function
  */
 void decawave_anchorless_communication_init(void)
 {

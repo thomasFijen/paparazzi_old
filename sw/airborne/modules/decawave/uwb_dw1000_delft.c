@@ -20,11 +20,11 @@
 /**
  * @file "modules/decawave/uwb_dw1000_delft.c"
  * @author Thomas Fijen
- * This is a driver to get ranging data from the Decawave DW1000 connected to Arduino. The format of the data recieved over the serial link is: [(byte) START_MARKER, (byte) anchorID, (float) range]. This module is based off of the module 'dw1000_arduino' created by Gautier Hattenberger <gautier.hattenberger@enac.fr>
+ * This is a driver to get ranging data from the Decawave DW1000 connected to Arduino. The format of the data recieved over the serial link is: 
+ * [(byte) START_MARKER, (byte) anchorID, (float) range]. This module is based off of the module 'dw1000_arduino' created by 
+ *  Gautier Hattenberger <gautier.hattenberger@enac.fr>
  */
- /*
- *	NOTE: To do this I had to edit the GPS.h file (line 166). I changed the value of GPS_TIMEOUT from 2 to 5
- */
+
 
 #include "modules/decawave/uwb_dw1000_delft.h"
 //#include "modules/decawave/multilateration_ls.h"
@@ -44,12 +44,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/** Number of anchors
- *
- * using standard trilateration algorithm, only 3 anchors are required/supported
- * at the moment.
- * More advanced multilateration algorithms might allow more anchors in the future
- */
  
 #ifndef DW1000_NB_ANCHORS
 #define DW1000_NB_ANCHORS 3

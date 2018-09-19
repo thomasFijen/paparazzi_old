@@ -4,19 +4,25 @@
   <doc>
     <description>This fuction implements the NN control necessary for my persistent surveillance mission. The NN used is not fully connected and has two outputs, namely; the x and y velocities. </description>
     <section name="MS" prefix="MS_">
-      <define name="LENGTH" value="5.0" type="int" description="Length of the Mission Space (along X axis)"/>
+      <define name="LENGTH" value="5.0" type="float" description="Length of the Mission Space (along X axis)"/>
       <define name="BREDTH" value="5.0" type="float" description="Bredth of the Mission Space (Along the Y axis)"/>
       <define name="GRID_RES" value="1.0" type="float" description="Resolution of the Mission Space discretisation"/>
       <define name="TIME_STEP" value="0.5" type="float" description="Fequency for calling the NN"/>
       <define name="GRID_NUM_CELLS" value="25" type="uint8_t" description="Number of cells in the mission space after discretisation"/>
       <define name="NUM_INPUTS" value="18" type="uint8_t" description="Number of inputs for the NN"/>
+      <define name="NUM_OUTPUTS" value="2" type="uint8_t" description="Number of outputs for the NN"/>
+      <define name="SWARM_SIZE" value="2" type="uint8_t" description="Number of UAVs in the swarm"/>
+      <define name="NUM_NODES" value="26" type="uint8_t" description="Number of nodes for the NN"/>
+      <define name="NUM_CONNECT" value="51" type="uint8_t" description="Number of connections for the NN"/>
+      <define name="MAX_VEL" value="1.7" type="float" description="Max velocity of the UAV"/>
+      <define name="CURRENT_ID" value="0" type="uint8_t" description="UAV ID. Numbering starts at 0"/>
     </section>
   </doc>
   <header>
     <file name="neural_network.h"/>
   </header>
-  <init fun="neural_network_init(void)"/>
-  <periodic fun="neural_network_periodic(void)" freq="10" autorun="TRUE"/>
+  <init fun="neural_network_init()"/>
+ <!-- <periodic fun="neural_network_periodic()" freq="10" autorun="TRUE"/> -->
   <makefile>
     <file name="neural_network.c"/>
   </makefile>
