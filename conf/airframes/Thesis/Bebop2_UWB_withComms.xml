@@ -30,17 +30,17 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
-    <!-- <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> -->
-      <!-- <define name="AHRS_USE_GPS" value="TRUE"/> -->
+      <!-- <define name="AHRS_USE_GPS_HEADING" value="FALSE"/> -->
+    <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
+      <define name="AHRS_USE_GPS" value="TRUE"/>
     </module>
     <module name="uwb_localisation_and_comms"> 
 		<configure name="UWB_DW1000_UART" value="UART2" />
 		<configure name="UWB_DW1000_BAUD" value="B57600" /> 
     </module>
-    <module name="gps" type="uwb"/>   <!-- datalink UWB -->
+    <module name="gps" type="datalink"/>   <!-- datalink UWB -->
 
-    <module name="ins" type="hff_extended"/>
+    <module name="ins" type="extended"/>
      
   </firmware>
 

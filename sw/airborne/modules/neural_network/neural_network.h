@@ -32,6 +32,7 @@
 #define NEURAL_NETWORK_H
 
 float activationFunction(float x);
+void ageMS(void);
  extern void calcInputs(void); 
  extern void calcNN(float outputs[MS_NUM_OUTPUTS]);
  extern void neural_network_init(void);

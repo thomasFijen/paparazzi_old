@@ -15,10 +15,10 @@
     <waypoint lat="51.9906311" lon="4.3767957" name="TRAJECTORY"/>
     <waypoint name="GOAL1" x="4" y="5"/>
     <waypoint name="GOAL2" x="4" y="6.5"/>
-    <waypoint name="A" x="4.8" y="4.8"/> 
-    <waypoint name="B" x="3.9" y="5.8"/>
-    <waypoint name="C" x="5.6" y="6.8"/>
-    <waypoint name="D" x="6.5" y="5.6"/> 
+    <waypoint name="A" x="3" y="4"/> 
+    <waypoint name="B" x="3" y="4"/>
+    <waypoint name="C" x="6" y="6"/>
+    <waypoint name="D" x="6" y="6"/>
     <waypoint name="beacon1" x="4.45" y="0.0"/> <!--x="4.3" y="0.2" __ 51.9905907	4.3767699--> 
     <waypoint name="beacon2" x="9.1" y="3.2"/> <!--x="10.5" y="4.7" __ 51.9906108	4.3768470-->
     <waypoint name="beacon3" x="6.2" y="11.2"/> <!--x="6.0" y="10.9" __ 51.9906835	4.3768078-->

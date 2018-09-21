@@ -31,16 +31,16 @@
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <!-- <define name="AHRS_USE_GPS_HEADING" value="FALSE"/> --> <!-- Use this for the UWB -->
-      <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> <!-- This is needed for the optitrack -->
-      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/> <!-- Use this for the optitrack -->
+      <!-- <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> --> <!-- This is needed for the optitrack -->
+      <!-- <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>  --><!-- Use this for the optitrack -->
     </module>
     <module name="uwb_dw1000_delft"> 
 		<configure name="UWB_DW1000_UART" value="UART2" />
 		<configure name="UWB_DW1000_BAUD" value="B57600" /> 
     </module>
-    <module name="gps" type="datalink"/>   <!-- datalink uwb -->
+    <module name="gps" type="uwb"/>   <!-- datalink uwb -->
 
-    <module name="ins" type="extended"/> <!-- hff_extended extended -->
+    <module name="ins" type="hff_extended"/> <!-- hff_extended extended -->
      
   </firmware>
 
@@ -51,7 +51,7 @@
     
   <module name="video_thread"/>
     <module name="pose_history"/>
-    <!-- <module name="cv_opticflow">
+     <module name="cv_opticflow">
        <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
        <define name="MAX_HORIZON" value="10"/>
        <define name="OPTICFLOW_METHOD" value="0"/>
@@ -64,7 +64,7 @@
        <define name="OPTICFLOW_FOV_H" value="0.665499265"/>
        <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="1.0"/>
        <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.9"/>
-     </module>  --> 
+     </module>  <!-- --> 
   </modules>
 
   <commands>
@@ -188,9 +188,12 @@
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="80"/>
-    <define name="HOVER_KD" value="80"/>
+    <define name="HOVER_KP" value="350"/>
+    <define name="HOVER_KD" value="85"/>
     <define name="HOVER_KI" value="20"/>
+<!--     <define name="HOVER_KP" value="80"/>
+    <define name="HOVER_KD" value="80"/>
+    <define name="HOVER_KI" value="20"/> -->
     <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
   </section>
@@ -235,7 +238,7 @@
   </section>
   
   <!-- I added this for the UWB beacons, Trillateration -->
-<!--	<section name="DW1000" prefix="DW1000_">
+	<!-- <section name="DW1000" prefix="DW1000_">
 		<define name="ANCHORS_IDS" value="1, 2, 3" type="int[]"/>
 		<define name="ANCHORS_POS_X" value="5, 9.1, 6." type="float[]"/>
 		<define name="ANCHORS_POS_Y" value="0., 3.3, 10.9" type="float[]"/>
@@ -247,10 +250,10 @@
 		<define name="SCALE" value="1.0,1.0,1.0" type="float[]"/>
 		<define name="INITIAL_HEADING" value="0.0"/>
 		<define name="NB_ANCHORS" value="3"/>
-	</section> -->
+	</section>  -->
 	
-	  <!-- I added this for the UWB beacons, Multilateration --> <!-- x1 = 4.45; y1 = 0; x1 = 6.9; y1 = 1.9 
-	<section name="DW1000" prefix="DW1000_">
+	  <!-- I added this for the UWB beacons, Multilateration --> <!-- x1 = 4.45; y1 = 0; x1 = 6.9; y1 = 1.9 -->
+	<!-- <section name="DW1000" prefix="DW1000_">
 		<define name="ANCHORS_IDS" value="1, 2, 3, 4" type="int[]"/>
 		<define name="ANCHORS_POS_X" value="6.9, 9.1, 6.2, 0.4" type="float[]"/> 
 		<define name="ANCHORS_POS_Y" value="1.9, 3.2, 11.2, 7.8" type="float[]"/>
@@ -259,13 +262,13 @@
 		<define name="SCALE" value="1.0,1.0,1.0,1.0" type="float[]"/>
 		<define name="INITIAL_HEADING" value="0.0"/>
 		<define name="NB_ANCHORS" value="4"/>
-	</section>  -->
+	</section>   -->
 	
 		  <!-- NLLS multilateraton: Own coordinate system... /-->
 	<section name="DW1000" prefix="DW1000_">
 		<define name="ANCHORS_IDS" value="1, 2, 3, 4" type="int[]"/>
-		<define name="ANCHORS_POS_X" value="0," type="float[]"/> 
-		<define name="ANCHORS_POS_Y" value="0,0," type="float[]"/>
+		<define name="ANCHORS_POS_X" value="3.42, 5.82, 0, 8" type="float[]"/> 
+		<define name="ANCHORS_POS_Y" value="0,0,9, 9" type="float[]"/>
 		<define name="ANCHORS_POS_Z" value="0.8, 0.8, 0.15, 0." type="float[]"/>
 		<define name="OFFSET" value="0.0, 0.0, 0.0, 0.0" type="float[]"/>
 		<define name="SCALE" value="1.0,1.0,1.0,1.0" type="float[]"/>

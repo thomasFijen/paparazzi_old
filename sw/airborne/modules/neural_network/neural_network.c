@@ -367,7 +367,7 @@ void calcNN(float outputs[MS_NUM_OUTPUTS]) {
     for (uint8_t nodeNum = MS_NUM_INPUTS; nodeNum < MS_NUM_NODES; nodeNum++){
         for (uint8_t connectNum = 0; connectNum < (MS_NUM_CONNECT-2*MS_NUM_INPUTS); connectNum++ ) {
             if(nnParams.connectTo[connectNum] == nnParams.node_ID[nodeNum]) {
-                float inValue;
+                float inValue = 0;
                 for(uint8_t i = 0; i < MS_NUM_NODES; i++){
                     if(nnParams.connectFrom[connectNum] == nnParams.node_ID[i]) {
                         inValue = nnParams.node_out[i];
@@ -394,7 +394,7 @@ void calcNN(float outputs[MS_NUM_OUTPUTS]) {
                 inVal = 0;
                 for (uint8_t connectNum = 0; connectNum < (MS_NUM_CONNECT-2*MS_NUM_INPUTS); connectNum++) {
                     if(nnParams.connectTo[connectNum] == nnParams.node_ID[nodeNum]) {
-                        float inValueTemp;
+                        float inValueTemp = 0;
                         for(uint8_t i = 0; i < MS_NUM_NODES; i++){
                             if(nnParams.connectFrom[connectNum] == nnParams.node_ID[i]) {
                                 inValueTemp = nnParams.node_out[i];
@@ -435,6 +435,35 @@ void calcNN(float outputs[MS_NUM_OUTPUTS]) {
     }
     outputs[0] = outputs[0]*MS_MAX_VEL*cosf(theta);
     outputs[1] = outputs[1]*MS_MAX_VEL*sinf(theta);
+}
+
+void ageMS(void){
+    for(uint8_t x = 0; x < MS_LENGTH/MS_GRID_RES; x ++) {
+        for (uint8_t y = 0; y < MS_LENGTH/MS_GRID_RES; y ++) {
+            if (msParams.MS[y][x] != 0){
+                msParams.MS[y][x] = msParams.MS[y][x] -1;
+                if(msParams.MS[y][x] < 1){
+                    msParams.MS[y][x] = 1;
+                }
+            }
+        }
+    }
+    for (uint8_t agentNum = 0; agentNum < MS_SWARM_SIZE; agentNum++){
+        uint8_t currentCell_x;
+        uint8_t currentCell_y;
+        if(agentNum == MS_CURRENT_ID){
+            struct EnuCoor_f *pos = stateGetPositionEnu_f();
+            currentCell_x = (uint8_t) (*pos).x/MS_GRID_RES;
+            currentCell_y = (uint8_t) (*pos).y/MS_GRID_RES;
+        }
+        else{
+            currentCell_x = (uint8_t) msParams.uavs[agentNum].x/MS_GRID_RES;
+            currentCell_y = (uint8_t) msParams.uavs[agentNum].y/MS_GRID_RES;
+        }
+        if(msParams.MS[currentCell_y][currentCell_x] != 0) {
+            msParams.MS[currentCell_y][currentCell_x] = 100;
+        }
+    }
 }
 
 void neural_network_init(void) {
