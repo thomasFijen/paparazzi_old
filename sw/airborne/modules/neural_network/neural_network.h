@@ -31,10 +31,13 @@
 #ifndef NEURAL_NETWORK_H
 #define NEURAL_NETWORK_H
 
+#include "std.h"
+
 float activationFunction(float x);
 void ageMS(void);
+extern bool testDistance(void);
  extern void calcInputs(void); 
- extern void calcNN(float outputs[MS_NUM_OUTPUTS]);
+ extern void calcNN(void); 
  extern void neural_network_init(void);
 // extern void neural_network_periodic(void);
 

@@ -26,6 +26,18 @@
 #ifndef UWB_LOCALISATION_AND_COMMS_H
 #define UWB_LOCALISATION_AND_COMMS_H
 
+#include "std.h"
+
+
+
+/* Structure containing the positions of the other UAVs sent over the UWB*/
+struct nodeState {
+  uint8_t nodeAddress;
+  float x;
+  float y;
+  /*bool state_updated[UWB_SERIAL_COMM_NODE_STATE_SIZE];*/
+};
+
 extern void local_and_comms_init(void);
 extern void local_and_comms_periodic(void);
 extern void local_and_comms_report(void);
@@ -39,6 +51,7 @@ extern void local_and_comms_event(void);
  extern void mat_subtract_2x1(float out[2], float in1[2], float in2[2]);
  
  extern void getRanges(float ranges[4]);
+ extern void getPos_UWB(uint8_t index, float positions[2]);
 
 #endif
 

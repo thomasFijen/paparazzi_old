@@ -47,7 +47,8 @@
  * at the moment.
  * More advanced multilateration algorithms might allow more anchors in the future
  */
- 
+
+
 #ifndef DW1000_NB_ANCHORS
 #define DW1000_NB_ANCHORS 3
 #endif
@@ -72,6 +73,10 @@
 #define DW1000_TIMEOUT 500
 #endif
 
+#ifndef DW1000_SERIAL_COMM_DIST_NUM_NODES
+#define DW1000_SERIAL_COMM_DIST_NUM_NODES 2
+#endif
+
 static bool _inProgress = false;
 static uint8_t _varByte = 0;
 static uint8_t count = 0;
@@ -86,24 +91,17 @@ static float aveY[5] = {0.f,0.f,0.f,0.f,0.f};
 #define UWB_SERIAL_PORT (&((UWB_DW1000_DEV).device))
 struct link_device *external_device = UWB_SERIAL_PORT;
 
-#define DW_NB_DATA 6
+/* Message types */
+#define DW_NB_DATA 7
 #define START_MARKER 254
 #define UWB_SERIAL_COMM_RANGE 0
 #define UWB_SERIAL_COMM_X 1
 #define UWB_SERIAL_COMM_Y 2
-#define UWB_SERIAL_COMM_NUM_NODES 6 // How many nodes actually are in the network
-#define UWB_SERIAL_COMM_DIST_NUM_NODES UWB_SERIAL_COMM_NUM_NODES-1-DW1000_NB_ANCHORS  // How many distant nodes are in the network, excluding anchors
+//#define UWB_SERIAL_COMM_NUM_NODES 6 // How many nodes actually are in the network
+//#define UWB_SERIAL_COMM_DIST_NUM_NODES UWB_SERIAL_COMM_NUM_NODES-1-DW1000_NB_ANCHORS  // How many distant nodes are in the network, excluding anchors
 
-/* Structure containing the positions of the other UAVs sent over the UWB*/
-struct nodeState {
-  uint8_t nodeAddress;
-  float x;
-  float y;
-  /*bool state_updated[UWB_SERIAL_COMM_NODE_STATE_SIZE];*/
-};
-
-static struct nodeState states[UWB_SERIAL_COMM_DIST_NUM_NODES];
-
+// static struct nodeState states[UWB_SERIAL_COMM_DIST_NUM_NODES];
+static struct nodeState states[DW1000_SERIAL_COMM_DIST_NUM_NODES];
 
 /** DW1000 positionning system structure */
 struct DW1000 {
@@ -122,6 +120,15 @@ struct DW1000 {
 
 static struct DW1000 dw1000;
 
+/* Returns the stored positions of the other drones sent over the UWB */
+void getPos_UWB(uint8_t index, float positions[2]){
+  for(uint8_t i = 0; i < DW1000_SERIAL_COMM_DIST_NUM_NODES; i++){
+    if(states[i].nodeAddress == index){
+      positions[0] = states[index].x;
+      positions[1] = states[index].y;     
+    }
+  }
+}
 
 //-- These are the functions needed to send data between the UAVs -------------------------------------------
 /**
@@ -233,7 +240,7 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
     }
   }
   else{
-    for(uint8_t i=0; i< UWB_SERIAL_COMM_DIST_NUM_NODES; i++){
+    for(uint8_t i=0; i< DW1000_SERIAL_COMM_DIST_NUM_NODES; i++){
       if (states[i].nodeAddress == id)
       {
         if (msgType == UWB_SERIAL_COMM_X) {
@@ -414,7 +421,7 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   uint32_t now_ts = get_sys_time_usec();
   
   // -- Sending the position to the Auto pilot
-  update_uwb(now_ts, &(dw->gps_dw1000));
+  //update_uwb(now_ts, &(dw->gps_dw1000));
 }
 
 //----------------------------------------------------
@@ -557,6 +564,13 @@ void local_and_comms_init(void) {
     llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
     ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0); 
 
+    /* Initialising the nodeState structure */ 
+    // for(uint8_t i = DW1000_NB_ANCHORS; i < (DW1000_NB_ANCHORS+ DW1000_SERIAL_COMM_DIST_NUM_NODES);i++){
+    for(uint8_t i = 0; i < (DW1000_SERIAL_COMM_DIST_NUM_NODES);i++){ 
+      // states[i].nodeAddress = ids[i];
+      states[i].nodeAddress = i;
+    }
+
     // init trilateration algorithm !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //    trilateration_init(dw1000.anchors); //This is for trilateration
 //    multilateration_init(dw1000.anchors); //This is fo multilateration
@@ -584,7 +598,7 @@ void local_and_comms_event(void) {
       
 //    int temp = trilateration_compute(dw1000.anchors, &dw1000.raw_pos); 		//This is for trilateration
 //    int temp = multilateration_compute(dw1000.anchors, &dw1000.raw_pos);	//This is for LS multilateration
-    int temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);			//This is for NLLS multilateration
+   /*int temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);			//This is for NLLS multilateration
 
     //int temp = 0;
     if (temp == 0) { //check_anchor_timeout(&dw1000) == false &&
@@ -596,7 +610,7 @@ void local_and_comms_event(void) {
       if(temp == -1)
       {
         // printf("ERROR: trilateration failed \n");
-      }
+      }*/
       dw1000.updated = false;
     }
 }

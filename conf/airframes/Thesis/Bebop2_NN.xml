@@ -37,6 +37,11 @@
 		<configure name="UWB_DW1000_UART" value="UART2" />
 		<configure name="UWB_DW1000_BAUD" value="B57600" /> 
     </module> -->
+    <module name="uwb_localisation_and_comms"> 
+      <configure name="UWB_DW1000_UART" value="UART2" />
+      <configure name="UWB_DW1000_BAUD" value="B57600" /> 
+    </module>
+
     <module name="neural_network"/>
     <module name="gps" type="datalink"/>   <!-- datalink uwb -->
 
@@ -235,18 +240,30 @@
   </section>
   
   <section name="MS" prefix="MS_" >
-  	  <define name="LENGTH" value="20.0" type="float" />
-      <define name="BREDTH" value="20.0" type="float" />
-      <define name="GRID_RES" value="1.0" type="float" />
+  	  <define name="LENGTH" value="8.0" type="float" />
+      <define name="BREDTH" value="8.0" type="float" />
+      <define name="GRID_RES" value="0.5" type="float" />
       <define name="TIME_STEP" value="1.0" type="float" />
-      <define name="GRID_NUM_CELLS" value="400" type="uint8_t" />
+      <define name="GRID_NUM_CELLS" value="128" type="uint8_t" />
       <define name="NUM_INPUTS" value="18" type="uint8_t" />
       <define name="NUM_OUTPUTS" value="2" type="uint8_t" />
       <define name="SWARM_SIZE" value="2" type="uint8_t" />
-      <define name="NUM_NODES" value="26" type="uint8_t" />
-      <define name="NUM_CONNECT" value="51" type="uint8_t" />
+      <define name="NUM_NODES" value="24" type="uint8_t" />
+      <define name="NUM_CONNECT" value="44" type="uint8_t" />
       <define name="MAX_VEL" value="1.7" type="float" />
       <define name="CURRENT_ID" value="0" type="uint8_t" />
+  </section>
+
+  <section name="DW1000" prefix="DW1000_">
+    <define name="ANCHORS_IDS" value="1, 2, 3, 4" type="int[]"/>
+    <define name="ANCHORS_POS_X" value="6.9, 9.1, 6.2, 0.4" type="float[]"/> 
+    <define name="ANCHORS_POS_Y" value="1.9, 3.2, 11.2, 7.8" type="float[]"/>
+    <define name="ANCHORS_POS_Z" value="0.8, 0.8, 0.15, 0." type="float[]"/>
+    <define name="OFFSET" value="0.0, 0.0, 0.0, 0.0" type="float[]"/>
+    <define name="SCALE" value="1.0,1.0,1.0,1.0" type="float[]"/>
+    <define name="INITIAL_HEADING" value="0.0"/>
+    <define name="NB_ANCHORS" value="4"/>
+    <define name="SERIAL_COMM_DIST_NUM_NODES" value="3"/>
   </section>
   
   <!-- I added this for the UWB beacons, Trillateration -->

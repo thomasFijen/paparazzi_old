@@ -14,11 +14,9 @@
     <waypoint lat="51.9906311" lon="4.3767957" name="STDBY"/>
     <waypoint name="TD" x="5" y="6.2"/> <!-- 51.9906386	4.3767877 -->
     <waypoint lat="51.9906311" lon="4.3767957" name="TRAJECTORY"/>
-    <waypoint name="GOAL1" x="4" y="3.5"/>
-    <waypoint name="beacon1" x="4.45" y="0.0"/> <!--x="4.3" y="0.2" __ 51.9905907	4.3767699--> 
-    <waypoint name="beacon2" x="9.1" y="3.2"/> <!--x="10.5" y="4.7" __ 51.9906108	4.3768470-->
-    <waypoint name="beacon3" x="6.2" y="11.2"/> <!--x="6.0" y="10.9" __ 51.9906835	4.3768078-->
-    <waypoint name="beacon4" x="0.4" y="7.8"/> <!-- x="0.0" y="6.3" __ lat="51.990640" lon="4.376710" 51.9906539	4.3767220--> 
+    <waypoint name="GOAL1" x="5" y="4"/>
+    <waypoint name="uav1" x="5" y="4"/>
+    <waypoint name="uav2" x="5" y="4"/>
     <waypoint lat="51.9905836" lon="4.3767729" name="_CZ1"/>
     <waypoint lat="51.9906365" lon="4.3767138" name="_CZ2"/>
     <waypoint lat="51.990680" lon="4.376805" name="_CZ3"/>
@@ -43,10 +41,11 @@
     </sector>
   </sectors>
   <exceptions>
-<!--     <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) &&
+    <exception cond="(testDistance())" deroute="stop"/>
+    <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) &&
       !(IndexOfBlock('Holding point') > nav_block) &&
       !(nav_block >= IndexOfBlock('Land here')) &&
-      (autopilot_in_flight() == true) )" deroute="Land here"/> -->
+      (autopilot_in_flight() == true) )" deroute="Land here"/>
     <exception cond="((GetPosAlt() > 3.5) && 
       !(IndexOfBlock('Holding point') > nav_block) &&
       !(nav_block >= IndexOfBlock('Land here')) &&
@@ -96,9 +95,16 @@
     </block>
     <!-- This block implements the NN survey mission. This should be used in Guided Mode-->
     <block name="Survey">
-
+      <while cond="TRUE">
+        <call_once fun="calcNN()"/>
+        <while cond="0.5 > stage_time"/>
+      </while>
     </block>
-    
+    <block name="stop">
+      <call_once fun="NavSetWaypointHere(WP_uav1)"/>
+      <go wp="uav1"/>
+    </block>
+
     <block key="l" name="Land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
       <go wp="TD"/>

@@ -44,6 +44,7 @@ gvf_seg gvf_segment;
 #include "subsystems/datalink/telemetry.h"
 static void send_gvf(struct transport_tx *trans, struct link_device *dev)
 {
+	bool temp = guidance_h_set_guided_vel();
   // Do not know whether is a good idea to do this check here or to include
   // this plen in gvf_trajectory
   int plen;
