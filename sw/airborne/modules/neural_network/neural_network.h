@@ -35,9 +35,10 @@
 
 float activationFunction(float x);
 void ageMS(void);
+extern bool outArea(void);
 extern bool testDistance(void);
  extern void calcInputs(void); 
- extern void calcNN(void); 
+ extern void calcNN(uint8_t wp_id); 
  extern void neural_network_init(void);
 // extern void neural_network_periodic(void);
 

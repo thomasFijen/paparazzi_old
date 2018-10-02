@@ -1,6 +1,7 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1.4" ground_alt="0" lat0="51.9905836" lon0="4.3767138" max_dist_from_home="10" name="My Flightplan" security_height="0.4">
+<flight_plan alt="1.4" ground_alt="0" lat0="51.9906148" lon0="4.3767674" max_dist_from_home="10" name="My Flightplan" security_height="0.4">
+  <!-- origional: lat0="51.9905836" lon0="4.3767138" ; other: lat0="51.990594" lon0="4.376776"-->
   <header>
     #include "subsystems/datalink/datalink.h"
     #include "subsystems/electrical.h"
@@ -15,23 +16,33 @@
     <waypoint name="TD" x="5" y="6.2"/> <!-- 51.9906386	4.3767877 -->
     <waypoint lat="51.9906311" lon="4.3767957" name="TRAJECTORY"/>
     <waypoint name="GOAL1" x="5" y="4"/>
-    <waypoint name="uav1" x="5" y="4"/>
-    <waypoint name="uav2" x="5" y="4"/>
-    <waypoint lat="51.9905836" lon="4.3767729" name="_CZ1"/>
+    <waypoint name="UAV1" x="0" y="0"/>
+    <!-- <waypoint name="uav2" x="5" y="4"/> -->
+    <waypoint name="_MS1" x="0" y="0"/>
+    <waypoint name="_MS2" x="4" y="0"/>
+    <waypoint name="_MS3" x="4" y="4"/>
+    <waypoint name="_MS4" x="0" y="4"/>
+<!--     <waypoint lat="51.9905836" lon="4.3767729" name="_CZ1"/>
     <waypoint lat="51.9906365" lon="4.3767138" name="_CZ2"/>
     <waypoint lat="51.990680" lon="4.376805" name="_CZ3"/>
-    <waypoint lat="51.9906226" lon="4.3768699" name="_CZ4"/>
+    <waypoint lat="51.9906226" lon="4.3768699" name="_CZ4"/> -->
     <waypoint lat="51.990594" lon="4.376776" name="_OZ1"/>
     <waypoint lat="51.990636" lon="4.376733" name="_OZ2"/>
     <waypoint lat="51.990671" lon="4.376806" name="_OZ3"/>
     <waypoint lat="51.990624" lon="4.376852" name="_OZ4"/>
   </waypoints>
   <sectors>
-    <sector color="red" name="CyberZoo">
+   <!--  <sector color="red" name="CyberZoo">
       <corner name="_CZ1"/>
       <corner name="_CZ2"/>
       <corner name="_CZ3"/>
       <corner name="_CZ4"/>
+    </sector> -->
+    <sector color="#FF9922" name="MissionSpace">
+      <corner name="_MS1"/>
+      <corner name="_MS2"/>
+      <corner name="_MS3"/>
+      <corner name="_MS4"/>
     </sector>
     <sector color="#FF9922" name="ObstacleZone">
       <corner name="_OZ1"/>
@@ -42,10 +53,11 @@
   </sectors>
   <exceptions>
     <exception cond="(testDistance())" deroute="stop"/>
-    <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) &&
+    <exception cond="(outArea())" deroute="Land here"/>
+<!--     <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) &&
       !(IndexOfBlock('Holding point') > nav_block) &&
       !(nav_block >= IndexOfBlock('Land here')) &&
-      (autopilot_in_flight() == true) )" deroute="Land here"/>
+      (autopilot_in_flight() == true) )" deroute="Land here"/> -->
     <exception cond="((GetPosAlt() > 3.5) && 
       !(IndexOfBlock('Holding point') > nav_block) &&
       !(nav_block >= IndexOfBlock('Land here')) &&
@@ -84,25 +96,29 @@
       <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
       <stay climb="0.4" vmode="climb" wp="STDBY"/>
     </block>
-    <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
-      <!-- <call_once fun="NavSetWaypointHere(WP_STDBY)"/> -->
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <stay wp="STDBY"/>
     </block>
-    <block name="Circle">
+<!--     <block name="Circle">
       <while cond="TRUE">
         <circle wp="GOAL1" radius="1" />
       </while>
-    </block>
+    </block> -->
     <!-- This block implements the NN survey mission. This should be used in Guided Mode-->
     <block name="Survey">
-      <while cond="TRUE">
-        <call_once fun="calcNN()"/>
-        <while cond="0.5 > stage_time"/>
-      </while>
+      <call_once fun="NavSetWaypointHere(WP_GOAL1)"/>
+      <call_once fun="calcNN(WP_UAV1)"/>
+      <stay wp="UAV1"/>
+
+   <!--   <while cond="TRUE">
+        <call_once fun="calcNN(WP_uav1)"/>
+        <go wp="uav1"/>
+         <while cond="0.5 > stage_time"/>
+      </while> -->
     </block>
     <block name="stop">
-      <call_once fun="NavSetWaypointHere(WP_uav1)"/>
-      <go wp="uav1"/>
+      <call_once fun="NavSetWaypointHere(WP_UAV1)"/>
+      <go wp="UAV1"/>
     </block>
 
     <block key="l" name="Land here" strip_button="Land Here" strip_icon="land-right.png">
@@ -125,6 +141,21 @@
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
+
+<!--     <blocks>
+        <block name="FPInit">
+              <while cond="!GpsFixValid()"/>
+              <while cond="1"/>
+    </block>
+    <block name="Force Start Engines" strip_button="Takeoff" strip_icon="takeoff.png">
+      <call_once fun="guidance_v_set_guided_th(0.2)"/>
+        <call_once fun="autopilot_set_motors_on(TRUE)"/>
+    </block>
+    <block name="Land" strip_button="Land Here" strip_icon="land-right.png">
+      <call fun="goLand()"/>
+          <while cond="1"/>
+    </block> -->
+
     <block name="Force Kill Engines">
       <call_once fun="autopilot_set_motors_on(FALSE)"/>
       <while cond="1"/>

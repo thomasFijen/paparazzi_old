@@ -92,11 +92,11 @@ static float aveY[5] = {0.f,0.f,0.f,0.f,0.f};
 struct link_device *external_device = UWB_SERIAL_PORT;
 
 /* Message types */
-#define DW_NB_DATA 7
+#define DW_NB_DATA 6
 #define START_MARKER 254
-#define UWB_SERIAL_COMM_RANGE 0
-#define UWB_SERIAL_COMM_X 1
-#define UWB_SERIAL_COMM_Y 2
+#define UWB_SERIAL_COMM_RANGE 3
+#define UWB_SERIAL_COMM_X 0
+#define UWB_SERIAL_COMM_Y 1
 //#define UWB_SERIAL_COMM_NUM_NODES 6 // How many nodes actually are in the network
 //#define UWB_SERIAL_COMM_DIST_NUM_NODES UWB_SERIAL_COMM_NUM_NODES-1-DW1000_NB_ANCHORS  // How many distant nodes are in the network, excluding anchors
 
@@ -507,6 +507,7 @@ static const float pos_y[] = DW1000_ANCHORS_POS_Y;
 static const float pos_z[] = DW1000_ANCHORS_POS_Z;
 static const float offset[] = DW1000_OFFSET;
 static const float scale[] = DW1000_SCALE;
+static const uint16_t tag_ids[] = DW1000_TAG_IDS;
 
 static void scale_position(struct DW1000 *dw)
 {
@@ -568,7 +569,7 @@ void local_and_comms_init(void) {
     // for(uint8_t i = DW1000_NB_ANCHORS; i < (DW1000_NB_ANCHORS+ DW1000_SERIAL_COMM_DIST_NUM_NODES);i++){
     for(uint8_t i = 0; i < (DW1000_SERIAL_COMM_DIST_NUM_NODES);i++){ 
       // states[i].nodeAddress = ids[i];
-      states[i].nodeAddress = i;
+      states[i].nodeAddress = tag_ids[i];
     }
 
     // init trilateration algorithm !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -584,9 +585,9 @@ void local_and_comms_periodic(void) {
 
 void local_and_comms_report(void) {
 	struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
-    struct EnuCoor_f *vel = stateGetSpeedEnu_f();
-    printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
-    
+    // struct EnuCoor_f *vel = stateGetSpeedEnu_f();
+    // printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
+    printf("%f,%f,%f,%f \n",(*pos2).x,(*pos2).y,states[1].x ,states[1].y ); //for identification
 }
 
 void local_and_comms_event(void) {

@@ -15,6 +15,7 @@
       <define name="INITIAL_HEADING" value="0." description="Initial heading correction between anchors frame and global frame"/>
       <define name="NB_ANCHORS" value="3" description="Set number of anchors"/>
       <define name="SERIAL_COMM_DIST_NUM_NODES" value="2" description="Number of UAVs communicating with one another"/>
+      <define name="TAG_IDS" value="1, 2, 3" type="int[]" description="Comma separated list of Tag ID"/>
     </section>
   </doc>
   <header>

@@ -16,6 +16,7 @@
       <define name="NUM_CONNECT" value="51" type="uint8_t" description="Number of connections for the NN"/>
       <define name="MAX_VEL" value="1.7" type="float" description="Max velocity of the UAV"/>
       <define name="CURRENT_ID" value="0" type="uint8_t" description="UAV ID. Numbering starts at 0"/>
+      <define name="SENSOR_RANGE" value="4" type="float" description="Length of the Antenna (or feelers)"/>
     </section>
   </doc>
   <header>

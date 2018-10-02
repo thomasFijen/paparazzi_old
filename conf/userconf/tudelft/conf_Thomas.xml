@@ -1,7 +1,7 @@
 <conf>
   <aircraft
    name="Bebop2_NN"
-   ac_id="20"
+   ac_id="22"
    airframe="airframes/Thesis/Bebop2_NN.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
@@ -12,7 +12,7 @@
   />
   <aircraft
    name="Bebop2_UWB"
-   ac_id="22"
+   ac_id="20"
    airframe="airframes/Thesis/Bebop2_UWB_2.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"

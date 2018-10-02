@@ -29,15 +29,16 @@
 #include "state.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "firmwares/rotorcraft/guidance/guidance_h.h"
+// #include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "subsystems/navigation/waypoints.h"
 #include "modules/decawave/uwb_localisation_and_comms.h"
 
 #ifndef MS_LENGTH
-#define MS_LENGTH 8.0f
+#define MS_LENGTH 7.0f
 #endif
 
 #ifndef MS_BREDTH
-#define MS_BREDTH 8.0f
+#define MS_BREDTH 7.0f
 #endif 
 
 #ifndef MS_GRID_RES
@@ -76,6 +77,10 @@
 #define MS_MAX_VEL 1.0f
 #endif
 
+#ifndef MS_SENSOR_RANGE
+#define MS_SENSOR_RANGE 4.0f
+#endif
+
 #ifndef MS_CURRENT_ID
 #define MS_CURRENT_ID MS_SWARM_SIZE-1
 #endif
@@ -85,7 +90,7 @@
 /** Mission Space Parameter structure */
 struct MS_Struct {
     // uint8_t MS[(uint8_t) (MS_BREDTH/MS_GRID_RES)][(uint8_t) (MS_LENGTH/MS_GRID_RES)];
-    uint8_t MS[16][16];
+    uint8_t MS[14][14];
     float sensorRange;
 	struct EnuCoor_f uavs[MS_SWARM_SIZE];
 };
@@ -121,25 +126,25 @@ void calcInputs(){
     */
 
     /* Conversion between coordinate systems */
-    float a = -0.866038;
-    float b = -0.500022;
-    float c = 4.373992;
-    float d = 1.024246;
+    // float a = -0.553150;
+    // float b = 0.848621;
+    // float c = 1.023455;
+    // float d = -3.975940;
 
     struct EnuCoor_f *pos = stateGetPositionEnu_f();
-    float tempX=(*pos).x;
-    float tempY=(*pos).y;
-    (*pos).x = a*tempX+b*tempY+c;
-    (*pos).y = b*tempX-a*tempY+d;
+    // float tempX=(*pos).x;
+    // float tempY=(*pos).y;
+    // (*pos).x = a*tempX+b*tempY+c;
+    // (*pos).y = b*tempX-a*tempY+d;
 
     for(uint8_t i=0;i<MS_SWARM_SIZE;i++){
         float temp[2];
         getPos_UWB(i,temp);
-        // msParams.uavs[i].x = temp[0];
-        // msParams.uavs[i].y = temp[1];
+        msParams.uavs[i].x = temp[0];
+        msParams.uavs[i].y = temp[1];
 
-        msParams.uavs[i].x = a*temp[0]+b*temp[1]+c;
-        msParams.uavs[i].y = b*temp[0]-a*temp[1]+d;
+        // msParams.uavs[i].x = a*temp[0]+b*temp[1]+c;
+        // msParams.uavs[i].y = b*temp[0]-a*temp[1]+d;
     }
     
     /* Default range values */
@@ -427,7 +432,7 @@ float activationFunction(float x) {
 }
 
 /** This function calculates the outputs of the NN */
-void calcNN() {
+void calcNN(uint8_t wp_id) {
     uint8_t recurrentNN = 0;
     // Reset the node_out to zero for the new calculation
     for (uint8_t nodeNum = MS_NUM_INPUTS; nodeNum < MS_NUM_NODES; nodeNum++){
@@ -524,17 +529,28 @@ void calcNN() {
     outputs[0] = outputs[0]*MS_MAX_VEL*cosf(theta);
     outputs[1] = outputs[1]*MS_MAX_VEL*sinf(theta);
 
-    guidance_h_set_guided_vel(outputs[0],outputs[1]); 
+    // Flying in NAV mode, Hopefully 
+    struct EnuCoor_f newWaypoint;
+    struct EnuCoor_f *pos = stateGetPositionEnu_f();
+
+    newWaypoint.x = (*pos).x+outputs[0]*0.5;
+    newWaypoint.y = (*pos).y+outputs[1]*0.5;
+    newWaypoint.z=(*pos).y;
+    waypoint_set_enu(wp_id,&newWaypoint);
+
+    // THIS IS FOR GUIDED MODE
+    // guidance_h_set_guided_body_vel(outputs[0],outputs[1]);
+    // guidance_h_set_guided_vel(outputs[0],outputs[1]); 
 
     // return false;
 }
 
 void ageMS(void){
     /* Conversion between coordinate systems */
-    float a = -0.866038;
-    float b = -0.500022;
-    float c = 4.373992;
-    float d = 1.024246;
+    // float a = -0.553150;
+    // float b = 0.848621;
+    // float c = 1.023455;
+    // float d = -3.975940;
 
     for(uint8_t x = 0; x < MS_LENGTH/MS_GRID_RES; x ++) {
         for (uint8_t y = 0; y < MS_LENGTH/MS_GRID_RES; y ++) {
@@ -551,10 +567,10 @@ void ageMS(void){
         uint8_t currentCell_y;
         if(agentNum == MS_CURRENT_ID){
             struct EnuCoor_f *pos = stateGetPositionEnu_f();
-            float tempX=(*pos).x;
-            float tempY=(*pos).y;
-            (*pos).x = a*tempX+b*tempY+c;
-            (*pos).y = b*tempX-a*tempY+d;
+            // float tempX=(*pos).x;
+            // float tempY=(*pos).y;
+            // (*pos).x = a*tempX+b*tempY+c;
+            // (*pos).y = b*tempX-a*tempY+d;
 
             currentCell_x = (uint8_t) (*pos).x/MS_GRID_RES;
             currentCell_y = (uint8_t) (*pos).y/MS_GRID_RES;
@@ -585,12 +601,12 @@ void neural_network_init(void) {
         }
     }
     
-    msParams.sensorRange = 4;
+    msParams.sensorRange = MS_SENSOR_RANGE;
     /* Starting positions of the Drones */
-    msParams.uavs[0].x = 3;
-    msParams.uavs[0].y = 4;
-    msParams.uavs[1].x = 5;
-    msParams.uavs[1].y = 4;
+    msParams.uavs[0].x = 3.5;
+    msParams.uavs[0].y = 3.5;
+    msParams.uavs[1].x = 0.5;
+    msParams.uavs[1].y = 6.5;
     // msParams.uavs[2].x = 11;
     // msParams.uavs[2].y = 11;
 
@@ -789,16 +805,16 @@ void neural_network_init(void) {
 
 bool testDistance(){
     /* Conversion between coordinate systems */
-    float a = -0.866038;
-    float b = -0.500022;
-    float c = 4.373992;
-    float d = 1.024246;
+    // float a = -0.553150;
+    // float b = 0.848621;
+    // float c = 1.023455;
+    // float d = -3.975940;
 
     struct EnuCoor_f *pos = stateGetPositionEnu_f();
-    float tempX=(*pos).x;
-    float tempY=(*pos).y;
-    (*pos).x = a*tempX+b*tempY+c;
-    (*pos).y = b*tempX-a*tempY+d;
+    // float tempX=(*pos).x;
+    // float tempY=(*pos).y;
+    // (*pos).x = a*tempX+b*tempY+c;
+    // (*pos).y = b*tempX-a*tempY+d;
 
     bool output = 0;
 
@@ -809,6 +825,17 @@ bool testDistance(){
                 output = 1;
             }
         }
+    }
+
+    return output;
+}
+
+bool outArea(){
+    bool output = 0;
+
+    struct EnuCoor_f *pos = stateGetPositionEnu_f();
+    if ((*pos).x < 0 || (*pos).y < 0 || (*pos).y > MS_BREDTH || (*pos).x > MS_LENGTH) {
+        output = 1;
     }
 
     return output;
