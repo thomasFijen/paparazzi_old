@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Thomas Fijen
+ * Copyright (C) Kirk Scheper
  *
  * This file is part of paparazzi
  *
@@ -18,30 +18,22 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/neural_network/neural_network.h"
- * @author Thomas Fijen
- * This fuction implements the NN control necessary for my persistent surveillance mission.
- * The NN used is not fully connected and has two outputs, namely; the x and y velocities.
+ * @file "modules/imav2017/imav2017.h"
+ * @author Kirk Scheper
+ * 
  */
 
-#ifndef MS_NUM_OUTPUTS
-#define MS_NUM_OUTPUTS 2
-#endif
+#ifndef IMAV2017_H
+#define IMAV2017_H
 
-#ifndef NEURAL_NETWORK_H
-#define NEURAL_NETWORK_H
+#include <inttypes.h>
 
-#include "std.h"
+//extern float gate_distance, gate_x_offset, gate_y_offset; //Or else flight plan gets confused
 
-float activationFunction(float x);
-void ageMS(void);
-extern bool outArea(void);
-extern bool testDistance(void);
- extern void calcInputs(void); 
- // extern bool calcNN(uint8_t wp_id); 
- extern void calcNN(void); 
- extern void neural_network_init(void);
-// extern void neural_network_periodic(void);
-
+extern void imav2017_init(void);
+extern void imav2017_set_gate(uint8_t quality, float w, float h,
+	    float psi, float theta, float depth, uint8_t gate_detected);
+extern void imav2017_histogram_obstacle_detection(uint8_t *stereo_distance_per_column, uint8_t *stereo_distance_filtered,
+		uint8_t *closest_average_distance, uint8_t *pixel_location_of_closest_object, int32_t size);
 #endif
 

@@ -24,7 +24,7 @@
   </header>
   <init fun="neural_network_init()"/>
  <!-- <periodic fun="neural_network_periodic()" freq="10" autorun="TRUE"/> -->
- <periodic fun="ageMS()" freq="2" autorun="TRUE"/>
+ <periodic fun="ageMS()" freq="1" autorun="TRUE"/>
   <makefile>
     <file name="neural_network.c"/>
   </makefile>

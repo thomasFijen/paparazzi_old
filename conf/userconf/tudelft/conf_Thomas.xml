@@ -1,7 +1,29 @@
 <conf>
   <aircraft
+   name="Bebop2_NN_18"
+   ac_id="18"
+   airframe="airframes/Thesis/Bebop2_NN.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/Thesis/NN_Flight.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/geo_mag.xml modules/ins_extended.xml modules/gps.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/imu_common.xml"
+   gui_color="#ffff00000000"
+  />
+  <aircraft
    name="Bebop2_NN"
    ac_id="22"
+   airframe="airframes/Thesis/Bebop2_NN.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/Thesis/NN_Flight.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/geo_mag.xml modules/ins_extended.xml modules/gps.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/imu_common.xml"
+   gui_color="blue"
+  />
+  <aircraft
+   name="Bebop2_NN_44"
+   ac_id="44"
    airframe="airframes/Thesis/Bebop2_NN.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"

@@ -1,0 +1,102 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="1.4" ground_alt="0" lat0="51.9906148" lon0="4.3767674" max_dist_from_home="10" name="imav2017_cooperativecarry" security_height="0.4">
+  <header>
+    #include "autopilot.h"
+    #include "subsystems/radio_control.h"
+    #include "subsystems/ahrs.h"
+    #include "subsystems/electrical.h"
+    #include "subsystems/datalink/datalink.h"
+  </header>
+<waypoints>
+    <waypoint lat="51.9906311" lon="4.3767957" name="HOME"/>
+    <waypoint lat="51.9906311" lon="4.3767957" name="CLIMB"/>
+    <waypoint lat="51.9906311" lon="4.3767957" name="STDBY"/>
+    <waypoint name="TD" x="5" y="6.2"/> <!-- 51.9906386 4.3767877 -->
+    <waypoint lat="51.9906311" lon="4.3767957" name="TRAJECTORY"/>
+    <waypoint name="GOAL1" x="2" y="2.5"/>
+    <waypoint name="UAV1" x="2" y="1.5"/>
+    <!-- <waypoint name="uav2" x="5" y="4"/> -->
+    <waypoint name="_MS1" x="0" y="0"/>
+    <waypoint name="_MS2" x="4" y="0"/>
+    <waypoint name="_MS3" x="4" y="4"/>
+    <waypoint name="_MS4" x="0" y="4"/>
+<!--     <waypoint lat="51.9905836" lon="4.3767729" name="_CZ1"/>
+    <waypoint lat="51.9906365" lon="4.3767138" name="_CZ2"/>
+    <waypoint lat="51.990680" lon="4.376805" name="_CZ3"/>
+    <waypoint lat="51.9906226" lon="4.3768699" name="_CZ4"/> -->
+    <waypoint lat="51.990594" lon="4.376776" name="_OZ1"/>
+    <waypoint lat="51.990636" lon="4.376733" name="_OZ2"/>
+    <waypoint lat="51.990671" lon="4.376806" name="_OZ3"/>
+    <waypoint lat="51.990624" lon="4.376852" name="_OZ4"/>
+  </waypoints>
+    <sectors>
+   <!--  <sector color="red" name="CyberZoo">
+      <corner name="_CZ1"/>
+      <corner name="_CZ2"/>
+      <corner name="_CZ3"/>
+      <corner name="_CZ4"/>
+    </sector> -->
+    <sector color="#FF9922" name="MissionSpace">
+      <corner name="_MS1"/>
+      <corner name="_MS2"/>
+      <corner name="_MS3"/>
+      <corner name="_MS4"/>
+    </sector>
+    <sector color="#FF9922" name="ObstacleZone">
+      <corner name="_OZ1"/>
+      <corner name="_OZ2"/>
+      <corner name="_OZ3"/>
+      <corner name="_OZ4"/>
+    </sector>
+  </sectors>
+  <exceptions>
+    <exception cond="datalink_time>=2" deroute="Force Kill Engines"/>
+    <exception cond="radio_control.status == RC_REALLY_LOST" deroute="Force Kill Engines"/>
+        <!-- <exception cond="(testDistance())" deroute="stop"/> -->
+    <exception cond="(outArea()) && !(nav_block >= IndexOfBlock('Land'))" deroute="Land"/>
+  </exceptions>
+  <blocks>  
+    <block name="Wait GPS">
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 2)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+    </block>
+    <block name="Holding point">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <!-- <block name="FPInit">
+          <while cond="!GpsFixValid()"/>
+          <while cond="1"/>
+      </block> -->
+    <block name="Force Start Engines" strip_button="Takeoff" strip_icon="takeoff.png">
+      <call_once fun="guidance_v_set_guided_th(0.2)"/>
+        <call_once fun="autopilot_set_motors_on(TRUE)"/>
+        </block>
+        <block name="Hover">
+      <while cond="TRUE">
+        <call fun="hoverGuided(1.5)"/>
+      </while>
+    </block>
+        <block name="Survey">
+      <while cond="TRUE">
+        <call_once fun="calcNN()"/>
+        <while cond="0.5 > stage_time"/>
+      </while>
+    </block>
+    <block name="Land" strip_button="Land Here" strip_icon="land-right.png">
+      <while cond="TRUE">
+        <call fun="goLand()"/>
+      </while>
+          <while cond="1"/>
+    </block>
+    <block name="Force Kill Engines">
+        <call_once fun="autopilot_set_motors_on(FALSE)"/>
+          <while cond="1"/>
+        </block>
+  </blocks>
+</flight_plan>

@@ -6,8 +6,8 @@
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2" > 
-  <configure name="HOST" value="192.168.42.$(AC_ID)"/>
-    <configure name="MODEM_HOST" value="192.168.42.43"/>
+<!--   <configure name="HOST" value="192.168.42.$(AC_ID)"/>
+    <configure name="MODEM_HOST" value="192.168.42.43"/> -->
    
     </target>
 
@@ -41,6 +41,8 @@
       <configure name="UWB_DW1000_UART" value="UART2" />
       <configure name="UWB_DW1000_BAUD" value="B57600" /> 
     </module>
+
+    <module name="guided_control_imav2017"/>
 
     <module name="neural_network"/>
     <module name="gps" type="datalink"/>   <!-- datalink uwb -->
@@ -226,10 +228,10 @@
   </section>
 
   <section name="AUTOPILOT">
-    <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
+    <define name="MODE_STARTUP" value="AP_MODE_GUIDED"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/> <!-- AP_MODE_NAV AP_MODE_GUIDED AP_MODE_ATTITUDE_Z_HOLD-->
-    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+    <define name="MODE_AUTO2" value="AP_MODE_GUIDED"/>
 
     <!-- <define name="NO_RC_THRUST_LIMIT" value="TRUE"/> -->
   </section>
@@ -245,9 +247,9 @@
   <section name="MS" prefix="MS_" >
   	  <define name="LENGTH" value="4.0" type="float" />
       <define name="BREDTH" value="4.0" type="float" />
-      <define name="GRID_RES" value="0.25" type="float" />
-      <define name="TIME_STEP" value="1.0" type="float" />
-      <define name="GRID_NUM_CELLS" value="32" type="uint8_t" />
+      <define name="GRID_RES" value="0.2" type="float" />
+      <define name="TIME_STEP" value="0.5" type="float" />
+      <define name="GRID_NUM_CELLS" value="80" type="uint8_t" />
       <define name="NUM_INPUTS" value="18" type="uint8_t" />
       <define name="NUM_OUTPUTS" value="2" type="uint8_t" />
       <define name="SWARM_SIZE" value="2" type="uint8_t" />
@@ -255,7 +257,7 @@
       <define name="NUM_CONNECT" value="44" type="uint8_t" />
       <define name="MAX_VEL" value="0.5" type="float" />
       <define name="CURRENT_ID" value="0" type="uint8_t" />
-      <define name="SENSOR_RANGE" value="1.5" type="float" />
+      <define name="SENSOR_RANGE" value="2.0" type="float" />
   </section>
 
   <section name="DW1000" prefix="DW1000_">

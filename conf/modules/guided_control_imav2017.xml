@@ -1,0 +1,17 @@
+ <!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="guided_control_imav2017" dir="guided_control_imav2017">
+	<doc>
+		<description>
+			Control module for guided flight.
+		</description>
+	</doc>
+	<header>
+		<file name="guided_control_imav2017.h" />
+	</header>
+	<!-- <init fun="guided_control_imav2017_init()" /> -->
+	<!-- <periodic fun="guided_control_imav2017_periodic()" freq="1" autorun="TRUE" /> -->
+	<makefile target="ap">
+		<file name="guided_control_imav2017.c" />
+	</makefile>
+</module>

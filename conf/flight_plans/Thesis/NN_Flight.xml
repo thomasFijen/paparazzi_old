@@ -15,8 +15,8 @@
     <waypoint lat="51.9906311" lon="4.3767957" name="STDBY"/>
     <waypoint name="TD" x="5" y="6.2"/> <!-- 51.9906386	4.3767877 -->
     <waypoint lat="51.9906311" lon="4.3767957" name="TRAJECTORY"/>
-    <waypoint name="GOAL1" x="5" y="4"/>
-    <waypoint name="UAV1" x="0" y="0"/>
+    <waypoint name="GOAL1" x="2" y="2.5"/>
+    <waypoint name="UAV1" x="2" y="1.5"/>
     <!-- <waypoint name="uav2" x="5" y="4"/> -->
     <waypoint name="_MS1" x="0" y="0"/>
     <waypoint name="_MS2" x="4" y="0"/>
@@ -52,7 +52,7 @@
     </sector>
   </sectors>
   <exceptions>
-    <exception cond="(testDistance())" deroute="stop"/>
+    <!-- <exception cond="(testDistance())" deroute="stop"/> -->
     <exception cond="(outArea())" deroute="Land here"/>
 <!--     <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) &&
       !(IndexOfBlock('Holding point') > nav_block) &&
@@ -106,19 +106,26 @@
     </block> -->
     <!-- This block implements the NN survey mission. This should be used in Guided Mode-->
     <block name="Survey">
-      <call_once fun="NavSetWaypointHere(WP_GOAL1)"/>
-      <call_once fun="calcNN(WP_UAV1)"/>
-      <stay wp="UAV1"/>
+      <while cond="TRUE">
+        <call fun="calcNN(WP_UAV1)"/>
+        <go wp="UAV1"/>
+        <while cond="1.0 > stage_time"/>
+      </while>
 
-   <!--   <while cond="TRUE">
-        <call_once fun="calcNN(WP_uav1)"/>
-        <go wp="uav1"/>
-         <while cond="0.5 > stage_time"/>
-      </while> -->
     </block>
     <block name="stop">
       <call_once fun="NavSetWaypointHere(WP_UAV1)"/>
-      <go wp="UAV1"/>
+      <stay wp="UAV1"/>
+    </block>
+
+    <block name="testWhile">
+      <while cond="TRUE">
+        <go wp="UAV1"/>
+        <stay wp="UAV1"/>
+        <go wp="GOAL1"/>
+        <stay wp="GOAL1"/>
+        <!-- <while cond="2.0 > stage_time"/> -->
+      </while>
     </block>
 
     <block key="l" name="Land here" strip_button="Land Here" strip_icon="land-right.png">
