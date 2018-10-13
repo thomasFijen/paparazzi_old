@@ -247,7 +247,7 @@
   <section name="MS" prefix="MS_" >
   	  <define name="LENGTH" value="4.0" type="float" />
       <define name="BREDTH" value="4.0" type="float" />
-      <define name="GRID_RES" value="0.2" type="float" />
+      <define name="GRID_RES" value="0.5" type="float" />
       <define name="TIME_STEP" value="0.5" type="float" />
       <define name="GRID_NUM_CELLS" value="80" type="uint8_t" />
       <define name="NUM_INPUTS" value="18" type="uint8_t" />
@@ -256,8 +256,8 @@
       <define name="NUM_NODES" value="24" type="uint8_t" />
       <define name="NUM_CONNECT" value="44" type="uint8_t" />
       <define name="MAX_VEL" value="0.5" type="float" />
-      <define name="CURRENT_ID" value="0" type="uint8_t" />
-      <define name="SENSOR_RANGE" value="2.0" type="float" />
+      <define name="CURRENT_ID" value="3" type="uint8_t" />
+      <define name="SENSOR_RANGE" value="2.5" type="float" />
   </section>
 
   <section name="DW1000" prefix="DW1000_">
@@ -270,7 +270,7 @@
     <define name="INITIAL_HEADING" value="0.0"/>
     <define name="NB_ANCHORS" value="4"/>
     <define name="SERIAL_COMM_DIST_NUM_NODES" value="2"/>
-    <define name="TAG_IDS" value="1,2" type="int[]"/>
+    <define name="TAG_IDS" value="3" type="int[]"/>
   </section>
   
   <!-- I added this for the UWB beacons, Trillateration -->

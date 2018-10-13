@@ -35,6 +35,11 @@
 #include "generated/airframe.h"
 #include "std.h"
 #include "guided_control_imav2017.h"
+
+#define PI 3.14159265
+
+static float i = 0.0;
+
 // // ABI messages
 // #include "subsystems/abi.h"
 
@@ -92,6 +97,30 @@ bool hoverGuided(float cmd_height){
 	temp &= guidance_h_set_guided_vel(0.0,0.0);
 	temp &= guidance_h_set_guided_heading(0.0); // not reccommended if without a good heading estimate
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
+}
+
+bool circle(){
+	printf("I value: %f",i);
+	float velX = 0.0;
+	float velY = 0.0;
+	i = i + 1;
+	if(i <= 5){
+		velX = 0.5;
+		velY = 0;
+	}else if (i <= 10){
+		velX = 0.0;
+		velY = -0.5;
+	}else if (i <=15){
+		velX = -0.5;
+		velY = 0.0;
+	}else if(i <=20){
+		velX = 0.0;
+		velY = 0.5;
+	}else{
+		i = 0.0;
+	}
+	bool ret = guidance_h_set_guided_vel(velX,velY);
+	return ret;
 }
 
 // bool trackOther(float cmd_height){

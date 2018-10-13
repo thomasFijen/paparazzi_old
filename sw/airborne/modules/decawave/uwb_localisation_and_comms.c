@@ -221,6 +221,7 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
   uint8_t msgType = uint8_t_from_buf(dw->buf+1);
   
   if (msgType == UWB_SERIAL_COMM_RANGE)  {
+    // printf("\nRange Reieved! ID = %d",id);
     for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
       if (dw->anchors[i].id == id) {
       /*float norm = sqrtf((dw->anchors[i].distance - float_from_buf(dw->buf+2))*(dw->anchors[i].distance - float_from_buf(dw->buf+2))); norm < 2*/
@@ -229,6 +230,7 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
           dw->anchors[i].distance = float_from_buf(dw->buf+2);
           dw->anchors[i].time = get_sys_time_float();
           dw->updated = true;
+          // printf("Range Updated");
         }
         else{
           dw->anchors[i].distance = dw->anchors[i].distance;
@@ -585,9 +587,9 @@ void local_and_comms_periodic(void) {
 
 void local_and_comms_report(void) {
 	struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
-    // struct EnuCoor_f *vel = stateGetSpeedEnu_f();
-    // printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
-    printf("%f,%f,%f,%f \n",(*pos2).x,(*pos2).y,states[1].x ,states[1].y ); //for identification
+    struct EnuCoor_f *vel = stateGetSpeedEnu_f();
+    printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
+    // printf("%f,%f,%f,%f \n",(*pos2).x,(*pos2).y,states[1].x ,states[1].y ); //for identification
 }
 
 void local_and_comms_event(void) {

@@ -1,12 +1,13 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
-
-<flight_plan alt="1.4" ground_alt="0" lat0="51.9906148" lon0="4.3767674" max_dist_from_home="10" name="imav2017_cooperativecarry" security_height="0.4">
+ <!-- origional: lat0="51.9905836" lon0="4.3767138" ; other: lat0="51.990594" lon0="4.376776"-->
+<flight_plan alt="1.4" ground_alt="0" lat0="51.9905836" lon0="4.3767138" max_dist_from_home="10" name="imav2017_cooperativecarry" security_height="0.4">
   <header>
     #include "autopilot.h"
     #include "subsystems/radio_control.h"
     #include "subsystems/ahrs.h"
     #include "subsystems/electrical.h"
     #include "subsystems/datalink/datalink.h"
+    #include "modules/neural_network/neural_network.h"
   </header>
 <waypoints>
     <waypoint lat="51.9906311" lon="4.3767957" name="HOME"/>
@@ -14,7 +15,7 @@
     <waypoint lat="51.9906311" lon="4.3767957" name="STDBY"/>
     <waypoint name="TD" x="5" y="6.2"/> <!-- 51.9906386 4.3767877 -->
     <waypoint lat="51.9906311" lon="4.3767957" name="TRAJECTORY"/>
-    <waypoint name="GOAL1" x="2" y="2.5"/>
+    <waypoint name="GOAL1" x="5" y="5"/>
     <waypoint name="UAV1" x="2" y="1.5"/>
     <!-- <waypoint name="uav2" x="5" y="4"/> -->
     <waypoint name="_MS1" x="0" y="0"/>
@@ -54,7 +55,7 @@
     <exception cond="datalink_time>=2" deroute="Force Kill Engines"/>
     <exception cond="radio_control.status == RC_REALLY_LOST" deroute="Force Kill Engines"/>
         <!-- <exception cond="(testDistance())" deroute="stop"/> -->
-    <exception cond="(outArea()) && !(nav_block >= IndexOfBlock('Land'))" deroute="Land"/>
+    <!-- <exception cond="(outArea()) && !(nav_block >= IndexOfBlock('Land'))" deroute="Land"/> -->
   </exceptions>
   <blocks>  
     <block name="Wait GPS">
@@ -82,11 +83,17 @@
         <call fun="hoverGuided(1.5)"/>
       </while>
     </block>
-        <block name="Survey">
+    <block name="Survey">
       <while cond="TRUE">
         <call_once fun="calcNN()"/>
-        <while cond="0.5 > stage_time"/>
+        <while cond="0.25 > stage_time"/>
       </while>
+    </block>
+    <block name="circle">
+      <for var="i" from="0" to="40">
+        <call fun="circle()"/>
+        <while cond="2 > stage_time"/>
+      </for>
     </block>
     <block name="Land" strip_button="Land Here" strip_icon="land-right.png">
       <while cond="TRUE">

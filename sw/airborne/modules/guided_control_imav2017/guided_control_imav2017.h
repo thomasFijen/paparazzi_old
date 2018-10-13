@@ -32,6 +32,7 @@
 // extern void guided_control_imav2017_periodic(void);
 
 extern bool hoverGuided(float cmd_height);
+extern bool circle(void);
 // extern bool trackOther(float cmd_height);
 // extern bool trackRelPos(float cmd_height);
 // extern bool trackVelocity(float cmd_height);

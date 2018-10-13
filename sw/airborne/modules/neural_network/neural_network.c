@@ -156,8 +156,8 @@ void calcInputs(){
     uint8_t currentCell_y;
     if ((*pos).x >= 0 && (*pos).x <= MS_LENGTH && (*pos).y >= 0 && (*pos).y <= MS_BREDTH) {
         /* Get current cell index */
-        currentCell_x = (uint8_t) (*pos).x/MS_GRID_RES;
-        currentCell_y = (uint8_t) (*pos).y/MS_GRID_RES;
+        currentCell_x = (uint8_t) ((*pos).x/MS_GRID_RES);
+        currentCell_y = (uint8_t) ((*pos).y/MS_GRID_RES);
 
         /* Antennae Function values */
         uint8_t numCells = msParams.sensorRange / MS_GRID_RES;
@@ -314,8 +314,8 @@ void calcInputs(){
         for(uint8_t i = 0; i < MS_SWARM_SIZE; i++){
             if (i != MS_CURRENT_ID) {
                 if (msParams.uavs[i].x >= 0 && msParams.uavs[i].x <= MS_LENGTH && msParams.uavs[i].y >= 0 && msParams.uavs[i].y <= MS_BREDTH) {
-                    uint8_t agentCell_x = (uint8_t) msParams.uavs[i].x/MS_GRID_RES;
-                    uint8_t agentCell_y = (uint8_t) msParams.uavs[i].y/MS_GRID_RES;
+                    uint8_t agentCell_x = (uint8_t) (msParams.uavs[i].x/MS_GRID_RES);
+                    uint8_t agentCell_y = (uint8_t) (msParams.uavs[i].y/MS_GRID_RES);
                     if(agentCell_x == currentCell_x){
                         float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
                         if(agentCell_y >= currentCell_y && distance < nnParams.node_out[0]){
@@ -581,12 +581,12 @@ void ageMS(void){
             // (*pos).x = a*tempX+b*tempY+c;
             // (*pos).y = -b*tempX+a*tempY+d;
 
-            currentCell_x = (uint8_t) (*pos).x/MS_GRID_RES;
-            currentCell_y = (uint8_t) (*pos).y/MS_GRID_RES;
+            currentCell_x = (uint8_t) ((*pos).x/MS_GRID_RES);
+            currentCell_y = (uint8_t) ((*pos).y/MS_GRID_RES);
         }
         else{
-            currentCell_x = (uint8_t) msParams.uavs[agentNum].x/MS_GRID_RES;
-            currentCell_y = (uint8_t) msParams.uavs[agentNum].y/MS_GRID_RES;
+            currentCell_x = (uint8_t) (msParams.uavs[agentNum].x/MS_GRID_RES);
+            currentCell_y = (uint8_t) (msParams.uavs[agentNum].y/MS_GRID_RES);
         }
         if(msParams.MS[currentCell_y][currentCell_x] != 0) {
             msParams.MS[currentCell_y][currentCell_x] = 100;
@@ -809,7 +809,31 @@ void neural_network_init(void) {
     // memcpy(nnParams.connectTo, connectTo, 14*sizeof(uint8_t));
 
     // uint8_t connectFrom[14] = {14,21,6,11,39,13,14,10,13,1,19,9,150,16};
-    // memcpy(nnParams.connectFrom, connectFrom, 14*sizeof(uint8_t));        
+    // memcpy(nnParams.connectFrom, connectFrom, 14*sizeof(uint8_t));
+
+/* ______________________________________________________ NN for 7x7 Mission space __________________________________________ */
+
+     /* Initialise the NN structure: Test 1 NN_7x7_ 
+     * Number of nodes: 27
+     * Number of connections: 54    */
+    // uint8_t assign[27] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,33,59,194,218,228,19,89,22,20};
+    // memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
+
+    // uint8_t assign2[2] = {23,26};
+    // memcpy(nnParams.outputIndex, assign2, 2*sizeof(uint8_t));
+
+    // float connectionsInit[36] = {-3.717117455,2.192775694,0.482336913,1.884638178,-4.028251312,-4.547274807,1.115480152,-8,5.314087188,3.103122405,5.832575527,-1.563995807,0.902591347,-8,-3.945750057,-7.784112785,5.309103927,4.147914241,-3.39928983,3.479813004,1.090538512,5.399106504,-7.341632111,-6.645377617,4.036422052,1.092206981,4.543172662,1.170054056,-8,-7.616365769,-2.54404365,-8,5.581609015,8,-0.537830795,6.628168546};
+    // memcpy(nnParams.connectionsInit, connectionsInit, 36*sizeof(float));
+
+    // float connect[18] = {-1.173190846,4.425084315,2.171182185,-3.803040364,4.682675774,-7.69496467,-7.59763961,-1.326935713,-6.808741027,-3.269899923,-4.823651445,-6.28116479,4.077206046,-2.809362887,-0.386280029,-5.354598277,-0.812486927,-1.665935606};
+    // memcpy(nnParams.connectWeight, connect, 18*sizeof(float));
+
+    // uint8_t connectTo[18] = {22,20,33,19,59,20,89,20,22,33,89,194,89,22,218,20,228,19};
+    // memcpy(nnParams.connectTo, connectTo, 18*sizeof(uint8_t));
+
+    // uint8_t connectFrom[18] = {10,22,10,33,13,59,6,89,19,8,5,5,194,17,13,218,12,228};
+    // memcpy(nnParams.connectFrom, connectFrom, 18*sizeof(uint8_t));
+
 }
 
 bool testDistance(){
