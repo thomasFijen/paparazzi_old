@@ -38,7 +38,7 @@
 
 #define PI 3.14159265
 
-static float i = 0.0;
+static float counter = 0.0;
 
 // // ABI messages
 // #include "subsystems/abi.h"
@@ -100,27 +100,17 @@ bool hoverGuided(float cmd_height){
 }
 
 bool circle(){
-	printf("I value: %f",i);
-	float velX = 0.0;
-	float velY = 0.0;
-	i = i + 1;
-	if(i <= 5){
-		velX = 0.5;
-		velY = 0;
-	}else if (i <= 10){
-		velX = 0.0;
-		velY = -0.5;
-	}else if (i <=15){
-		velX = -0.5;
-		velY = 0.0;
-	}else if(i <=20){
-		velX = 0.0;
-		velY = 0.5;
-	}else{
-		i = 0.0;
-	}
-	bool ret = guidance_h_set_guided_vel(velX,velY);
-	return ret;
+  float velX = 0.0;
+  float velY = 0.0;
+  if(counter <= 360){
+    velX = 0.5*cosf(counter*PI/180.0);
+    velY = 0.5*sinf(counter*PI/180.0);
+    counter = counter + 1;
+  } else{
+    counter = 0.0;
+  }
+  bool ret = guidance_h_set_guided_vel(velX,velY);
+  return ret;
 }
 
 // bool trackOther(float cmd_height){

@@ -24,9 +24,9 @@
  */
 
 #include "modules/decawave/uwb_localisation_and_comms.h"
-//#include "modules/decawave/multilateration_ls.h"
 #include "modules/decawave/multilateration_nlls.h"
 //#include "modules/decawave/trilateration.h"
+// #include "kalmanFilter.h"
 
 #include "std.h"
 #include "mcu_periph/uart.h"
@@ -34,20 +34,13 @@
 #include "subsystems/datalink/downlink.h"
 #include "subsystems/abi.h"
 #include "subsystems/gps.h"
+#include "subsystems/gps/gps_uwb.h"
 #include "state.h"
 #include "generated/flight_plan.h"
 #include "generated/airframe.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/** Number of anchors
- *
- * using standard trilateration algorithm, only 3 anchors are required/supported
- * at the moment.
- * More advanced multilateration algorithms might allow more anchors in the future
- */
-
 
 #ifndef DW1000_NB_ANCHORS
 #define DW1000_NB_ANCHORS 3
@@ -79,9 +72,6 @@
 
 static bool _inProgress = false;
 static uint8_t _varByte = 0;
-static uint8_t count = 0;
-static float aveX[5] = {0.f,0.f,0.f,0.f,0.f};
-static float aveY[5] = {0.f,0.f,0.f,0.f,0.f};
 /*static float aveZ[5] = {0.f,0.f,0.f,0.f,0.f};*/
 // static float X_old_kal[6] = {0,0,0,0,0,0};
 // static float X_new_kal[6] = {0,0,0,0,0,0};
@@ -107,8 +97,6 @@ static struct nodeState states[DW1000_SERIAL_COMM_DIST_NUM_NODES];
 struct DW1000 {
   uint8_t buf[DW_NB_DATA];    ///< incoming data buffer
   uint8_t idx;                ///< buffer index
-  //uint8_t ck;                 ///< checksum
-  //uint8_t state;              ///< parser state
   float initial_heading;      ///< initial heading correction
   struct Anchor anchors[DW1000_NB_ANCHORS];   ///<anchors data
   struct EnuCoor_f pos;       ///< local pos in anchors frame
@@ -130,37 +118,12 @@ void getPos_UWB(uint8_t index, float positions[2]){
   }
 }
 
-//-- These are the functions needed to send data between the UAVs -------------------------------------------
-/**
- * Function that encodes the high bytes of the serial data to be sent.
- * Start and end markers are reserved values 254 and 255. In order to be able to send these values,
- * the payload values 253, 254, and 255 are encoded as 2 bytes, respectively 253 0, 253 1, and 253 2.
- */
-/*static void encodeHighBytes(uint8_t *send_data, uint8_t msg_size, uint8_t *data_send_buffer, uint8_t *data_total_send)
-{
-  uint8_t data_send_count = msg_size;
-  *data_total_send = 0;
-  for (uint8_t i = 0; i < data_send_count; i++) {
-    if (send_data[i] >= UWB_SERIAL_COMM_SPECIAL_BYTE) {
-      data_send_buffer[*data_total_send] = UWB_SERIAL_COMM_SPECIAL_BYTE;
-      (*data_total_send)++;
-      data_send_buffer[*data_total_send] = send_data[i] - UWB_SERIAL_COMM_SPECIAL_BYTE;
-    } else {
-      data_send_buffer[*data_total_send] = send_data[i];
-    }
-    (*data_total_send)++;
-  }
-}*/
-
+/* Function for sending position over serial Port */
 static void sendFloat(uint8_t msg_type, float data)
 {
-/*  static uint8_t data_send_buffer[DW_NB_DATA];
-  static uint8_t data_total_send = 0;*/
-
   // Make bytes of the float
   uint8_t floatbyte[4];
   memcpy(floatbyte, &data, 4);
-  /*encodeHighBytes(floatbyte, 4, data_send_buffer, &data_total_send);*/
 
   UWB_SERIAL_PORT->put_byte(UWB_SERIAL_PORT->periph, 0, START_MARKER);
   UWB_SERIAL_PORT->put_byte(UWB_SERIAL_PORT->periph, 0, msg_type);
@@ -168,30 +131,7 @@ static void sendFloat(uint8_t msg_type, float data)
   for (uint8_t i = 0; i < 4; i++) {
     UWB_SERIAL_PORT->put_byte(UWB_SERIAL_PORT->periph, 0, floatbyte[i]);
   }
-  /*for (uint8_t i = 0; i < data_total_send; i++) {
-    UWB_SERIAL_PORT->put_byte(UWB_SERIAL_PORT->periph, 0, data_send_buffer[i]);
-  }*/
-
-  /*UWB_SERIAL_PORT->put_byte(UWB_SERIAL_PORT->periph, 0, UWB_SERIAL_COMM_END_MARKER);*/
 }
-
-//-------------------------------------------------------------------------------------------------------------------
-
-
-/*void getRanges(float ranges[4]){
-  ranges[0] = dw1000.anchors[0].distance;
-  ranges[1] = dw1000.anchors[1].distance;
-  ranges[2] = dw1000.anchors[2].distance;
-  if(DW1000_NB_ANCHORS == 4)
-  {
-    ranges[3] = dw1000.anchors[3].distance;
-  }
-  else
-  {
-    ranges[3] = 0;
-  }
-}*/
-
 
 /** Utility function to get float from buffer */
 static inline float float_from_buf(uint8_t* b) {
@@ -224,13 +164,11 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
     // printf("\nRange Reieved! ID = %d",id);
     for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
       if (dw->anchors[i].id == id) {
-      /*float norm = sqrtf((dw->anchors[i].distance - float_from_buf(dw->buf+2))*(dw->anchors[i].distance - float_from_buf(dw->buf+2))); norm < 2*/
         float norm = ((dw->anchors[i].distance - float_from_buf(dw->buf+2))*(dw->anchors[i].distance - float_from_buf(dw->buf+2)));
-        if (norm < 4 || dw->anchors[i].distance == 0) { //This is a check to reject outlier distance measurements
+        if (norm < 4 || dw->anchors[i].distance == 0) { //Outlier Rejection. Ignore ranges that change by more than 2m
           dw->anchors[i].distance = float_from_buf(dw->buf+2);
           dw->anchors[i].time = get_sys_time_float();
           dw->updated = true;
-          // printf("Range Updated");
         }
         else{
           dw->anchors[i].distance = dw->anchors[i].distance;
@@ -257,45 +195,8 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
   }
 }
 
-/**
- * Function for receiving serial data.
- * Only receives serial data that is between the start and end markers. Discards all other data.
- * Stores the received data in received_message, and after decodes the high bytes and copies the final
- * message to the corresponding message in _messages.
- */
-/*static void getSerialData(uint8_t *bytes_received)
-{
-  static bool in_progress = false;
-  static uint8_t var_byte;
-  static uint8_t received_message[UWB_SERIAL_COMM_MAX_MESSAGE];
-
-  while (external_device->char_available(external_device->periph)) {
-    var_byte = UWB_SERIAL_PORT->get_byte(UWB_SERIAL_PORT->periph);
-
-    if (var_byte == UWB_SERIAL_COMM_START_MARKER) {
-      (*bytes_received) = 0;
-      in_progress = true;
-    }
-
-    if (in_progress) {
-      if ((*bytes_received) < UWB_SERIAL_COMM_MAX_MESSAGE - 1) {
-        received_message[*bytes_received] = var_byte;
-        (*bytes_received)++;
-      } else {
-        in_progress = false;
-      }
-    }
-
-    if (var_byte == UWB_SERIAL_COMM_END_MARKER) {
-      in_progress = false;
-      decodeHighBytes(*bytes_received, received_message);
-    }
-  }
-}*/
-
-/** Data parsing function */
-static void dw1000_arduino_parse(struct DW1000 *dw)
-{   
+/* Data parsing function */
+static void dw1000_arduino_parse(struct DW1000 *dw) {   
   while (uart_char_available(&UWB_DW1000_DEV)){
     _varByte = uart_getch(&UWB_DW1000_DEV);
     
@@ -325,55 +226,6 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
   float z = (*pos2).z; //-- This just needs to be checked, this might be the problem on takeoff. Rather read in the sonar value
 
-  //--Outlier rejection:
-  float error = sqrtf((aveX[count-1]-x)*(aveX[count-1]-x)+(aveY[count-1]-y)*(aveY[count-1]-y));
-  if (error > 10)
-  {
-    if(count == 0)
-    {
-    aveX[count] = aveX[4];
-    aveY[count] = aveY[4];
-    /*aveZ[count] = aveZ[4];*/
-  }
-  else
-  {
-    aveX[count] = aveX[count-1];
-    aveY[count] = aveY[count-1];
-    /*aveZ[count] = aveZ[count-1];*/
-  }
-  }
-  else
-  {
-    aveX[count] = x;
-    aveY[count] = y;
-    /*aveZ[count] = dw->pos.z;*/
-  }//--End outlier rejection
-  
-  // -- Moving average Filter
-  x=0;
-  y=0;
-  /*float z=0;*/
-  
-  for(uint8_t i=0;i<5;i++)
-  {
-  x=x+aveX[i];
-  y=y+aveY[i];
-/*  z=z+aveZ[i];*/
-  }
-  x=x/5;
-  y=y/5;
-/*  z=z/5;*/
-  
-  if(count == 4)
-  {
-    count = 0;
-  }
-  else
-  {
-    count++;
-  }
-  //-- End of the filters and outlier rejection --
-  
   
   //-- Applying the Kalman filter:
   
@@ -395,10 +247,8 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   
   enu_pos.x = (int32_t) (x * 100);
   enu_pos.y = (int32_t) (y * 100);
-  
   enu_pos.z = (int32_t) (z * 100); // dw->pos.
-  //struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
-  
+
   // Convert the ENU coordinates to ECEF
   ecef_of_enu_point_i(&(dw->gps_dw1000.ecef_pos), &(dw->ltp_def), &enu_pos);
   SetBit(dw->gps_dw1000.valid_fields, GPS_VALID_POS_ECEF_BIT);
@@ -425,82 +275,6 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   // -- Sending the position to the Auto pilot
   //update_uwb(now_ts, &(dw->gps_dw1000));
 }
-
-//----------------------------------------------------
-/* Added a Kalman Filter to the position. Not sure if this will affect the other filters in the INS...
-* Inputs: Previously Calculated X, inputs u, UWB pos x, UWB pos y
-    u = [vel X; vel Y]; X = [accel x, vel x, accel y, vel y, x, y]
-*/
-void kalman_filter(float out[6], float X_old[6], float u[2], float x, float y)
-{
-  //--Discretised model, This is hard coded from the MATLAB file.
-  float phi[36] = {0.8942,-2.4404,0,0,0,0,0.0018,0.9976,0,0,0,0,0,0,0.8942,-2.4404,0,0,0,0,0.0018,0.9976,0,0,0,0.002,0,0,1,0,0,0,0,0.002,0,1};
-  float gamma[12] = {2.4404,0,0.0024,0,0,2.4404,0,0.0024,0,0,0,0};
-  float Cd[12] = {0,0,0,0,1,0,0,0,0,0,0,1};
-  
-  float K[12] = {-0.008*1.0e-4,0,0,0,0.001*1.0e-4,-0.0049*1.0e-4,0,0.0001*1.0e-4,0.7365*1.0e-4,-0.009*1.0e-4,-0.009*1.0e-4,0.9060*1.0e-4};
-  float X_hat[6] = {0,0,0,0,0,0};
-  
-  //--Temporary storage variables
-  float temp_6x1[6];
-  float temp2_6x1[6];
-  float temp_2x1[2];
-  float temp2_2x1[2] = {x,y};
-  
-  //Determine X_hat from the model 
-    mat_mult_6x6_6x1(temp_6x1, phi, X_old);
-    mat_mult_6x2_2x1(temp2_6x1, gamma, u);
-    mat_add_6x1(X_hat,temp_6x1,temp2_6x1);
-    
-    //Update the estimate with the Kalman gain
-    mat_mult_2x6_6x1(temp_2x1,Cd,X_hat);
-    mat_subtract_2x1(temp_2x1,temp2_2x1,temp_2x1);
-    mat_mult_6x2_2x1(temp_6x1,K,temp_2x1);
-    mat_add_6x1(out,X_hat,temp_6x1);
-}
-
-//--Matrix functions for the Kalman filter
-void mat_mult_6x6_6x1(float out[6], float in1[36], float in2[6])
-{
-  out[0] = in1[0]*in2[0] + in1[1]*in2[1] + in1[2]*in2[2] + in1[3]*in2[3] + in1[4]*in2[4] + in1[5]*in2[5];
-  out[1] = in1[6]*in2[0] + in1[7]*in2[1] + in1[8]*in2[2] + in1[9]*in2[3] + in1[10]*in2[4] + in1[11]*in2[5];
-  out[2] = in1[12]*in2[0] +in1[13]*in2[1] + in1[14]*in2[2] + in1[15]*in2[3] + in1[16]*in2[4] + in1[17]*in2[5];
-  out[3] = in1[18]*in2[0] +in1[19]*in2[1] + in1[20]*in2[2] + in1[21]*in2[3] + in1[22]*in2[4] + in1[23]*in2[5];
-  out[4] = in1[24]*in2[0] +in1[25]*in2[1] + in1[26]*in2[2] + in1[27]*in2[3] + in1[28]*in2[4] + in1[29]*in2[5];
-  out[5] = in1[30]*in2[0] +in1[31]*in2[1] + in1[32]*in2[2] + in1[33]*in2[3] + in1[34]*in2[4] + in1[35]*in2[5];
-}
-void mat_mult_6x2_2x1(float out[6], float in1[12], float in2[2])
-{
-  out[0] = in1[0]*in2[0] + in1[1]*in2[1];
-  out[1] = in1[2]*in2[0] + in1[3]*in2[1];
-  out[2] = in1[4]*in2[0] + in1[5]*in2[1];
-  out[3] = in1[6]*in2[0] + in1[7]*in2[1];
-  out[4] = in1[8]*in2[0] + in1[9]*in2[1];
-  out[5] = in1[10]*in2[0] + in1[11]*in2[1];
-}
-void mat_add_6x1(float out[6], float in1[6], float in2[6])
-{
-  out[0] = in1[0]+in2[0];
-  out[1] = in1[1]+in2[1];
-  out[2] = in1[2]+in2[2];
-  out[3] = in1[3]+in2[3];
-  out[4] = in1[4]+in2[4];
-  out[5] = in1[5]+in2[5];
-}
-void mat_mult_2x6_6x1(float out[2], float in1[12], float in2[6])
-{
-  out[0] = in1[0]*in2[0] +in1[1]*in2[1] + in1[2]*in2[2] + in1[3]*in2[3] + in1[4]*in2[4] + in1[5]*in2[5];
-  out[1] = in1[6]*in2[0] +in1[7]*in2[1] + in1[8]*in2[2] + in1[9]*in2[3] + in1[10]*in2[4] + in1[11]*in2[5];
-}
-void mat_subtract_2x1(float out[2], float in1[2], float in2[2])
-{
-  out[0] = in1[0]-in2[0];
-  out[1] = in1[1]-in2[1];
-}
-
-
-//----------------------------------------------------
-
 
 /// init arrays from airframe file
 static const uint16_t ids[] = DW1000_ANCHORS_IDS;
@@ -534,86 +308,82 @@ static bool check_anchor_timeout(struct DW1000 *dw)
 }
 
 void local_and_comms_init(void) {
-     // init DW1000 structure
-    dw1000.idx = 0;
-  //  dw1000.ck = 0;
-  //  dw1000.state = DW_WAIT_STX;
-    dw1000.initial_heading = DW1000_INITIAL_HEADING;
-    dw1000.pos.x = 5.f;
-    dw1000.pos.y = 5.f;
-    dw1000.pos.z = 0.f;
-    dw1000.updated = false;
-    for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
+  // init DW1000 structure
+  dw1000.idx = 0;
+  dw1000.initial_heading = DW1000_INITIAL_HEADING;
+  dw1000.pos.x = 5.f;
+  dw1000.pos.y = 5.f;
+  dw1000.pos.z = 0.f;
+  dw1000.updated = false;
+  for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
     dw1000.anchors[i].distance = 0.f;
     dw1000.anchors[i].time = 0.f;
     dw1000.anchors[i].id = ids[i];
     dw1000.anchors[i].pos.x = pos_x[i];
     dw1000.anchors[i].pos.y = pos_y[i];
     dw1000.anchors[i].pos.z = pos_z[i];
-    }
+  }
+  // gps structure init
+  dw1000.gps_dw1000.fix = GPS_FIX_NONE;
+  dw1000.gps_dw1000.pdop = 0;
+  dw1000.gps_dw1000.sacc = 0;
+  dw1000.gps_dw1000.pacc = 0;
+  dw1000.gps_dw1000.cacc = 0;
+  dw1000.gps_dw1000.comp_id = GPS_DW1000_ID; //GPS_DW1000_ID
 
-    // gps structure init
-    dw1000.gps_dw1000.fix = GPS_FIX_NONE;
-    dw1000.gps_dw1000.pdop = 0;
-    dw1000.gps_dw1000.sacc = 0;
-    dw1000.gps_dw1000.pacc = 0;
-    dw1000.gps_dw1000.cacc = 0;
-    dw1000.gps_dw1000.comp_id = GPS_DW1000_ID; //GPS_DW1000_ID
+  struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
+  llh_nav0.lat = NAV_LAT0;
+  llh_nav0.lon = NAV_LON0;
+  /* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
+  llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
+  ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0); 
 
-    struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
-    llh_nav0.lat = NAV_LAT0;
-    llh_nav0.lon = NAV_LON0;
-    /* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
-    llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
-    ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0); 
+  /* Initialising the nodeState structure */ 
+  // for(uint8_t i = DW1000_NB_ANCHORS; i < (DW1000_NB_ANCHORS+ DW1000_SERIAL_COMM_DIST_NUM_NODES);i++){
+  for(uint8_t i = 0; i < (DW1000_SERIAL_COMM_DIST_NUM_NODES);i++){ 
+    // states[i].nodeAddress = ids[i];
+    states[i].nodeAddress = tag_ids[i];
+  }
 
-    /* Initialising the nodeState structure */ 
-    // for(uint8_t i = DW1000_NB_ANCHORS; i < (DW1000_NB_ANCHORS+ DW1000_SERIAL_COMM_DIST_NUM_NODES);i++){
-    for(uint8_t i = 0; i < (DW1000_SERIAL_COMM_DIST_NUM_NODES);i++){ 
-      // states[i].nodeAddress = ids[i];
-      states[i].nodeAddress = tag_ids[i];
-    }
-
-    // init trilateration algorithm !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//    trilateration_init(dw1000.anchors); //This is for trilateration
-//    multilateration_init(dw1000.anchors); //This is fo multilateration
+  /* Initialise the trilateration algorithm if 3 anchors are used */
+  // if (TRILAT) {
+  //   trilateration_init(dw1000.anchors); 
+  // }
 }
 
 void local_and_comms_periodic(void) {
-	struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+  struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
   sendFloat(UWB_SERIAL_COMM_X, (*pos2).x);
   sendFloat(UWB_SERIAL_COMM_Y, (*pos2).y);
 }
 
 void local_and_comms_report(void) {
-	struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
-    struct EnuCoor_f *vel = stateGetSpeedEnu_f();
-    printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
-    // printf("%f,%f,%f,%f \n",(*pos2).x,(*pos2).y,states[1].x ,states[1].y ); //for identification
+  struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+  struct EnuCoor_f *vel = stateGetSpeedEnu_f();
+  printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
+  // printf("%f,%f,%f,%f \n",(*pos2).x,(*pos2).y,states[1].x ,states[1].y ); //for identification
 }
 
 void local_and_comms_event(void) {
-    dw1000_arduino_parse(&dw1000);
-  
- 
-    if (dw1000.updated) {
-    // if no timeout on anchors, run trilateration algorithm
-      
-//    int temp = trilateration_compute(dw1000.anchors, &dw1000.raw_pos); 		//This is for trilateration
-//    int temp = multilateration_compute(dw1000.anchors, &dw1000.raw_pos);	//This is for LS multilateration
-   /*int temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);			//This is for NLLS multilateration
+  dw1000_arduino_parse(&dw1000);
 
-    //int temp = 0;
-    if (temp == 0) { //check_anchor_timeout(&dw1000) == false &&
-        // apply scale and neutral corrections
-        scale_position(&dw1000);
-        // send fake GPS message for INS filters
-        send_gps_dw1000_small(&dw1000);
-      }
-      if(temp == -1)
-      {
-        // printf("ERROR: trilateration failed \n");
-      }*/
-      dw1000.updated = false;
+  if (dw1000.updated) {
+    uint8_t temp;
+    // if (TRILAT) {
+    //   temp = trilateration_compute(dw1000.anchors, &dw1000.raw_pos);         //This is for trilateration
+    // } else {
+    //   temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);  //This is for NLLS multilateration
+    // }
+    temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);  //This is for NLLS multilateration
+    if (temp == 0) { 
+      // apply scale and neutral corrections
+      scale_position(&dw1000);
+      // send fake GPS message for INS filters
+      send_gps_dw1000_small(&dw1000);
     }
+    if(temp == -1)  {
+      printf("ERROR: trilateration failed \n");
+    }
+    dw1000.updated = false;
+  }
 }

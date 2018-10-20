@@ -33,7 +33,7 @@
       <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> <!-- This is needed for the optitrack -->
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/> <!-- Use this for the optitrack -->
     </module>
- <!--   <module name="uwb_dw1000_delft"> 
+   <!-- <module name="uwb_dw1000_delft"> 
 		<configure name="UWB_DW1000_UART" value="UART2" />
 		<configure name="UWB_DW1000_BAUD" value="B57600" /> 
     </module> -->
@@ -260,6 +260,7 @@
       <define name="SENSOR_RANGE" value="2.5" type="float" />
   </section>
 
+<!-- Multilateration with comms -->
   <section name="DW1000" prefix="DW1000_">
     <define name="ANCHORS_IDS" value="1, 2, 3, 4" type="int[]"/>
     <define name="ANCHORS_POS_X" value="6.9, 9.1, 6.2, 0.4" type="float[]"/> 
@@ -288,8 +289,8 @@
 		<define name="NB_ANCHORS" value="3"/>
 	</section> -->
 	
-	  <!-- I added this for the UWB beacons, Multilateration --> <!-- x1 = 4.45; y1 = 0; x1 = 6.9; y1 = 1.9 
-	<section name="DW1000" prefix="DW1000_">
+	  <!-- I added this for the UWB beacons, Multilateration --> <!-- x1 = 4.45; y1 = 0; x1 = 6.9; y1 = 1.9 -->
+<!-- 	<section name="DW1000" prefix="DW1000_">
 		<define name="ANCHORS_IDS" value="1, 2, 3, 4" type="int[]"/>
 		<define name="ANCHORS_POS_X" value="6.9, 9.1, 6.2, 0.4" type="float[]"/> 
 		<define name="ANCHORS_POS_Y" value="1.9, 3.2, 11.2, 7.8" type="float[]"/>
@@ -298,7 +299,7 @@
 		<define name="SCALE" value="1.0,1.0,1.0,1.0" type="float[]"/>
 		<define name="INITIAL_HEADING" value="0.0"/>
 		<define name="NB_ANCHORS" value="4"/>
-	</section>  -->
+	</section>   -->
 	
 
 	<!--	<section name="DW1000" prefix="DW1000_">

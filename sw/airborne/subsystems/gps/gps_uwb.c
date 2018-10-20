@@ -31,46 +31,29 @@
 //struct LtpDef_i ltp_def;
 
 struct GpsState gps_uwb;
-static uint32_t now_ts;	//This just needs to be double checked to ensure it is defined correctly
+static uint32_t now_ts;  /
 static bool updateGPS;
 
-void gps_uwb_init(void) 
-{
-	gps_uwb.fix = GPS_FIX_NONE;
-	gps_uwb.pdop = 0;
-	gps_uwb.sacc = 0;
-	gps_uwb.pacc = 0;
-	gps_uwb.cacc = 0;
+void gps_uwb_init(void) {
+  gps_uwb.fix = GPS_FIX_NONE;
+  gps_uwb.pdop = 0;
+  gps_uwb.sacc = 0;
+  gps_uwb.pacc = 0;
+  gps_uwb.cacc = 0;
 
-	gps_uwb.comp_id = GPS_DW1000_ID;
-	updateGPS = 0;
-
-//	struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
-//	llh_nav0.lat = NAV_LAT0;
-//	llh_nav0.lon = NAV_LON0;
-	/* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
-//	llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
-
-//	ltp_def_from_lla_i(&ltp_def, &llh_nav0);
+  gps_uwb.comp_id = GPS_DW1000_ID;
+  updateGPS = 0;
 }
 
-void gps_uwb_event(void)
-{
-	if (updateGPS)
-	{
-		AbiSendMsgGPS(GPS_DW1000_ID, now_ts, &(gps_uwb));
-		updateGPS = 0;
-		//printf("TEST: gps_uwb_event time: %d \n",now_ts);
-	}
-
+void gps_uwb_event(void) {
+  if (updateGPS)  {
+    AbiSendMsgGPS(GPS_DW1000_ID, now_ts, &(gps_uwb));
+    updateGPS = 0;
+  }
 }
 
-void update_uwb(uint32_t ts, struct GpsState *gps_dw1000)
-{	
-	now_ts = ts;
-	gps_uwb = *gps_dw1000;
-	updateGPS = 1;
-	//printf("TEST: update_UWB time: %d \n",ts);
+void update_uwb(uint32_t ts, struct GpsState *gps_dw1000) {  
+  now_ts = ts;
+  gps_uwb = *gps_dw1000;
+  updateGPS = 1;
 }
-
-

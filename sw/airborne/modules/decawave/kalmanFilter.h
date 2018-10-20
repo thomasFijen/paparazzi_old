@@ -18,30 +18,21 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/decawave/gps_uwb.h"
+ * @file "modules/decawave/kalmanFilter.h"
  * @author Thomas Fijen
- * Use this file so that the UWB can be simulated as a primary GPS structure
+ * This code implements a Kalman filter on the UWB position of the Parrot Bebop 2. WARNING: The discretised model of the UAV and the kalman gain K were 
+ * calculated offline in MATLAB and hardcoded into this file.
  */
 
-#ifndef GPS_UWB_H
-#define GPS_UWB_H
+#ifndef KALMANFILTER_H
+#define KALMANFILTER_H
+ 
+ extern void kalman_filter(float out[6], float X_old[6], float u[2], float x, float y);
+ extern void mat_mult_6x6_6x1(float out[6], float in1[36], float in2[6]);
+ extern void mat_mult_6x2_2x1(float out[6], float in1[12], float in2[2]);
+ extern void mat_add_6x1(float out[6], float in1[6], float in2[6]);
+ extern void mat_mult_2x6_6x1(float out[2], float in1[12], float in2[6]);
+ extern void mat_subtract_2x1(float out[2], float in1[2], float in2[2]);
 
-#include "std.h"
-#include "generated/airframe.h"
-#include "subsystems/gps.h"
-
-
-#ifndef PRIMARY_GPS
-#define PRIMARY_GPS GPS_UWB
 #endif
 
-extern struct GpsState gps_uwb;
-
-extern void gps_uwb_init(void);
-extern void gps_uwb_event(void);
-#define gps_uwb_periodic_check() gps_periodic_check(&gps_uwb)
- 
-extern void update_uwb(uint32_t now_ts, struct GpsState *gps_dw1000);
- 
-
-#endif
