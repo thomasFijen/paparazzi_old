@@ -42,7 +42,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
  
 #ifndef DW1000_NB_ANCHORS
 #define DW1000_NB_ANCHORS 3

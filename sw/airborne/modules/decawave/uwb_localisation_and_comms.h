@@ -20,7 +20,8 @@
 /**
  * @file "modules/decawave/uwb_localisation_and_comms.h"
  * @author Thomas Fijen
- * This function contains the code necessary to localise the UAV, using UWB, as well as the inter-UAV communication
+ * This function contains the code necessary to localise the UAV, using UWB, as well 
+ * as the inter-UAV communication
  */
 
 #ifndef UWB_LOCALISATION_AND_COMMS_H

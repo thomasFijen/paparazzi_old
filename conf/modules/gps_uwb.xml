@@ -24,7 +24,7 @@
       $(TARGET).CFLAGS += -DSECONDARY_GPS=GPS_UWB
       else
       $(TARGET).CFLAGS += -DGPS_TYPE_H=\"subsystems/gps/gps_uwb.h\"
-      $(TARGET).CFLAGS += -DPRIMARY_GPS=GPS_uwb
+      $(TARGET).CFLAGS += -DPRIMARY_GPS=GPS_UWB
       endif
       else
       # plain old single GPS usage

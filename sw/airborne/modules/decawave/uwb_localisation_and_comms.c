@@ -66,32 +66,27 @@
 #define DW1000_TIMEOUT 500
 #endif
 
-#ifndef DW1000_SERIAL_COMM_DIST_NUM_NODES
-#define DW1000_SERIAL_COMM_DIST_NUM_NODES 2
+#ifndef DW1000_SERIAL_COMM_NUM_TAGS
+#define  DW1000_SERIAL_COMM_NUM_TAGS 2
 #endif
 
 static bool _inProgress = false;
 static uint8_t _varByte = 0;
-/*static float aveZ[5] = {0.f,0.f,0.f,0.f,0.f};*/
 // static float X_old_kal[6] = {0,0,0,0,0,0};
 // static float X_new_kal[6] = {0,0,0,0,0,0};
 
-
-/* -- Parameters used by Steven in his Code. Not sure if these two lines are needed -- */
 #define UWB_SERIAL_PORT (&((UWB_DW1000_DEV).device))
 struct link_device *external_device = UWB_SERIAL_PORT;
 
-/* Message types */
+/* Message types. This must correspond to the UART message format */
 #define DW_NB_DATA 6
 #define START_MARKER 254
 #define UWB_SERIAL_COMM_RANGE 3
 #define UWB_SERIAL_COMM_X 0
 #define UWB_SERIAL_COMM_Y 1
-//#define UWB_SERIAL_COMM_NUM_NODES 6 // How many nodes actually are in the network
-//#define UWB_SERIAL_COMM_DIST_NUM_NODES UWB_SERIAL_COMM_NUM_NODES-1-DW1000_NB_ANCHORS  // How many distant nodes are in the network, excluding anchors
 
 // static struct nodeState states[UWB_SERIAL_COMM_DIST_NUM_NODES];
-static struct nodeState states[DW1000_SERIAL_COMM_DIST_NUM_NODES];
+static struct nodeState states[ DW1000_SERIAL_COMM_NUM_TAGS];
 
 /** DW1000 positionning system structure */
 struct DW1000 {
@@ -110,7 +105,7 @@ static struct DW1000 dw1000;
 
 /* Returns the stored positions of the other drones sent over the UWB */
 void getPos_UWB(uint8_t index, float positions[2]){
-  for(uint8_t i = 0; i < DW1000_SERIAL_COMM_DIST_NUM_NODES; i++){
+  for(uint8_t i = 0; i <  DW1000_SERIAL_COMM_NUM_TAGS; i++){
     if(states[i].nodeAddress == index){
       positions[0] = states[index].x;
       positions[1] = states[index].y;     
@@ -155,13 +150,12 @@ static inline uint16_t uint16_from_buf(uint8_t* b) {
   return u16+temp;
 }
 
-/** Utility function to fill anchor from buffer */
+/** Utility function to fill anchor or state structure from buffer */
 static void fill_anchor_Cust(struct DW1000 *dw) {
   uint16_t id = uint16_from_buf(dw->buf);
   uint8_t msgType = uint8_t_from_buf(dw->buf+1);
   
   if (msgType == UWB_SERIAL_COMM_RANGE)  {
-    // printf("\nRange Reieved! ID = %d",id);
     for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
       if (dw->anchors[i].id == id) {
         float norm = ((dw->anchors[i].distance - float_from_buf(dw->buf+2))*(dw->anchors[i].distance - float_from_buf(dw->buf+2)));
@@ -180,7 +174,7 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
     }
   }
   else{
-    for(uint8_t i=0; i< DW1000_SERIAL_COMM_DIST_NUM_NODES; i++){
+    for(uint8_t i=0; i<  DW1000_SERIAL_COMM_NUM_TAGS; i++){
       if (states[i].nodeAddress == id)
       {
         if (msgType == UWB_SERIAL_COMM_X) {
@@ -226,11 +220,9 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
   float z = (*pos2).z; //-- This just needs to be checked, this might be the problem on takeoff. Rather read in the sonar value
 
-  
   //-- Applying the Kalman filter:
-  
- //struct EnuCoor_f *vel = stateGetSpeedEnu_f();
-/*   float uk[2] = {(*vel).x,(*vel).y};
+  /*struct EnuCoor_f *vel = stateGetSpeedEnu_f();
+  float uk[2] = {(*vel).x,(*vel).y};
   kalman_filter(X_new_kal, X_old_kal, uk, x, y);
   
   enu_pos.x = (int32_t) (X_new_kal[4] * 100);
@@ -272,8 +264,8 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   // publish new GPS data
   uint32_t now_ts = get_sys_time_usec();
   
-  // -- Sending the position to the Auto pilot
-  //update_uwb(now_ts, &(dw->gps_dw1000));
+  // -- Call the update function from the UWB GPS code
+  update_uwb(now_ts, &(dw->gps_dw1000));
 }
 
 /// init arrays from airframe file
@@ -329,7 +321,7 @@ void local_and_comms_init(void) {
   dw1000.gps_dw1000.sacc = 0;
   dw1000.gps_dw1000.pacc = 0;
   dw1000.gps_dw1000.cacc = 0;
-  dw1000.gps_dw1000.comp_id = GPS_DW1000_ID; //GPS_DW1000_ID
+  dw1000.gps_dw1000.comp_id = GPS_DW1000_ID; 
 
   struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
   llh_nav0.lat = NAV_LAT0;
@@ -339,9 +331,7 @@ void local_and_comms_init(void) {
   ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0); 
 
   /* Initialising the nodeState structure */ 
-  // for(uint8_t i = DW1000_NB_ANCHORS; i < (DW1000_NB_ANCHORS+ DW1000_SERIAL_COMM_DIST_NUM_NODES);i++){
-  for(uint8_t i = 0; i < (DW1000_SERIAL_COMM_DIST_NUM_NODES);i++){ 
-    // states[i].nodeAddress = ids[i];
+  for(uint8_t i = 0; i < ( DW1000_SERIAL_COMM_NUM_TAGS);i++){ 
     states[i].nodeAddress = tag_ids[i];
   }
 

@@ -87,10 +87,13 @@
 
 #define PI 3.14159265
 
+
+static struct MS_Struct msParams;
+static struct NN_struct nnParams;
 /** Mission Space Parameter structure */
 struct MS_Struct {
-    // uint8_t MS[(uint8_t) (MS_BREDTH/MS_GRID_RES)][(uint8_t) (MS_LENGTH/MS_GRID_RES)];
-    uint8_t MS[20][20];
+    uint8_t MS[(uint8_t) (MS_BREDTH/MS_GRID_RES)][(uint8_t) (MS_LENGTH/MS_GRID_RES)];
+    // uint8_t MS[20][20];
     float sensorRange;
 	struct EnuCoor_f uavs[MS_SWARM_SIZE];
 };
@@ -110,9 +113,6 @@ struct NN_struct {
     uint8_t node_ID [MS_NUM_NODES];
     float node_out [MS_NUM_NODES];
 };
-
-static struct MS_Struct msParams;
-static struct NN_struct nnParams;
 
 /** This function determines the inputs into the NN */
 void calcInputs(){

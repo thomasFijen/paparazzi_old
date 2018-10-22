@@ -23,7 +23,7 @@
  * Use this file so that the UWB can be simulated as a primary GPS structure
  */
 
-#include "generated/flight_plan.h"        // reference lla NAV_XXX0
+//#include "generated/flight_plan.h"        // reference lla NAV_XXX0
 #include "subsystems/gps/gps_uwb.h"
 #include "subsystems/gps.h"
 #include "subsystems/abi.h"
@@ -31,7 +31,7 @@
 //struct LtpDef_i ltp_def;
 
 struct GpsState gps_uwb;
-static uint32_t now_ts;  /
+static uint32_t now_ts;  
 static bool updateGPS;
 
 void gps_uwb_init(void) {

@@ -45,7 +45,7 @@
     <module name="guided_control_imav2017"/>
 
     <module name="neural_network"/>
-    <module name="gps" type="datalink"/>   <!-- datalink uwb -->
+    <module name="gps" type="uwb"/>   <!-- datalink uwb -->
 
     <module name="ins" type="extended"/> <!-- hff_extended extended -->
      
