@@ -191,8 +191,8 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
 
 /* Data parsing function */
 static void dw1000_arduino_parse(struct DW1000 *dw) {   
-  while (uart_char_available(&UWB_DW1000_DEV)){
-    _varByte = uart_getch(&UWB_DW1000_DEV);
+  while (external_device->char_available(external_device->periph)) {
+    _varByte = UWB_SERIAL_PORT->get_byte(UWB_SERIAL_PORT->periph);
     
     if (_inProgress){
       dw->buf[dw->idx] = _varByte;
@@ -265,7 +265,7 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   uint32_t now_ts = get_sys_time_usec();
   
   // -- Call the update function from the UWB GPS code
-  update_uwb(now_ts, &(dw->gps_dw1000));
+  // update_uwb(now_ts, &(dw->gps_dw1000));
 }
 
 /// init arrays from airframe file
@@ -345,6 +345,8 @@ void local_and_comms_periodic(void) {
   struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
   sendFloat(UWB_SERIAL_COMM_X, (*pos2).x);
   sendFloat(UWB_SERIAL_COMM_Y, (*pos2).y);
+  // sendFloat(UWB_SERIAL_COMM_X,5.5);
+  // sendFloat(UWB_SERIAL_COMM_Y, 3.5);
 }
 
 void local_and_comms_report(void) {

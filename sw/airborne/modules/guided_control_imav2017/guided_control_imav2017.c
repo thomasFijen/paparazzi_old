@@ -104,7 +104,7 @@ bool circle(){
   float velY = 0.0;
   if(counter <= 360){
     velX = 0.5*cosf(counter*PI/180.0);
-    velY = 0.5*sinf(counter*PI/180.0);
+    //velY = 0.5*sinf(counter*PI/180.0);
     counter = counter + 1;
   } else{
     counter = 0.0;

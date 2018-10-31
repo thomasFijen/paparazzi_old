@@ -90,9 +90,9 @@
       </while>
     </block>
     <block name="circle">
-      <for var="i" from="0" to="40">
+      <for var="i" from="0" to="80">
         <call fun="circle()"/>
-        <while cond="2 > stage_time"/>
+        <while cond="0.25 > stage_time"/>
       </for>
     </block>
     <block name="Land" strip_button="Land Here" strip_icon="land-right.png">
