@@ -95,7 +95,7 @@ bool hoverGuided(float cmd_height){
 	bool temp = true;
 	temp &= guidance_v_set_guided_z(-cmd_height);
 	temp &= guidance_h_set_guided_vel(0.0,0.0);
-	temp &= guidance_h_set_guided_heading(0.0); // not reccommended if without a good heading estimate
+	temp &= guidance_h_set_guided_heading(-0.576); //0.0 not reccommended if without a good heading estimate
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 }
 
@@ -109,7 +109,8 @@ bool circle(){
   } else{
     counter = 0.0;
   }
-  bool ret = guidance_h_set_guided_vel(velX,velY);
+  // bool ret = guidance_h_set_guided_vel(velX,velY);
+  bool ret = guidance_h_set_guided_body_vel(velX,velY);
   return ret;
 }
 

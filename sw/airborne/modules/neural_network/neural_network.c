@@ -70,7 +70,7 @@
 #endif
 
 #ifndef MS_NUM_CONNECT
-#define MS_NUM_CONNECT 44
+#define MS_NUM_CONNECT 49
 #endif
 
 #ifndef MS_MAX_VEL
@@ -139,12 +139,12 @@ void calcInputs(){
 
     for(uint8_t i=0;i<MS_SWARM_SIZE;i++){
         float temp[2];
-        getPos_UWB(i,temp);
+        getPos_UWB((i+2),temp);             //!!!!!!!!!!!!!!!! MAGIC NUMBER: BEWARE!!!!!!
         msParams.uavs[i].x = temp[0];
         msParams.uavs[i].y = temp[1];
 
         msParams.uavs[i].x = a*temp[0]+b*temp[1]+c;
-        msParams.uavs[i].y = b*temp[0]-a*temp[1]+d;
+        msParams.uavs[i].y = -b*temp[0]+a*temp[1]+d;
     }
     
     /* Default range values */
@@ -163,6 +163,7 @@ void calcInputs(){
         uint8_t numCells = msParams.sensorRange / MS_GRID_RES;
 
         nnParams.node_out[0] = MS_GRID_RES*(currentCell_y+1)-(*pos).y;
+        nnParams.node_out[8] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for (uint8_t i = 1; i <= numCells; i++) {
             if (((*pos).y+i*MS_GRID_RES) > MS_BREDTH) {
                 break;
@@ -181,6 +182,7 @@ void calcInputs(){
         }
 
         nnParams.node_out[2] = MS_GRID_RES*(currentCell_x+1)-(*pos).x;
+        nnParams.node_out[10] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for (uint8_t i = 1; i <= numCells; i++) {
             if (((*pos).x+i*MS_GRID_RES) > MS_LENGTH) {
                 break;
@@ -199,6 +201,7 @@ void calcInputs(){
         }
 
         nnParams.node_out[4] = (*pos).y - MS_GRID_RES*(currentCell_y);
+        nnParams.node_out[12] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for (uint8_t i = 1; i <= numCells; i++) {
             if (((*pos).y-i*MS_GRID_RES) < 0) {
                 break;
@@ -217,6 +220,7 @@ void calcInputs(){
         }
 
         nnParams.node_out[6] = (*pos).x-MS_GRID_RES*(currentCell_x);
+        nnParams.node_out[14] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for (uint8_t i = 1; i <= numCells; i++) {
             if (((*pos).x-i*MS_GRID_RES) < 0) {
                 break;
@@ -238,6 +242,7 @@ void calcInputs(){
         float stepSize = MS_GRID_RES/cosf(PI/4);
 
         nnParams.node_out[1] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x+1))*((*pos).x-MS_GRID_RES*(currentCell_x+1))+((*pos).y-MS_GRID_RES*(currentCell_y+1))*((*pos).y-MS_GRID_RES*(currentCell_y+1)));
+        nnParams.node_out[9] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for(uint8_t i = 1; i <= numCells; i++) {
             if (((*pos).y+i*MS_GRID_RES) > MS_BREDTH || ((*pos).x+i*MS_GRID_RES) > MS_LENGTH) {
                 break;
@@ -256,7 +261,8 @@ void calcInputs(){
         }
 
         nnParams.node_out[3] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x+1))*((*pos).x-MS_GRID_RES*(currentCell_x+1))+((*pos).y-MS_GRID_RES*(currentCell_y))*((*pos).y-MS_GRID_RES*(currentCell_y)));
-        nnParams.node_out[3] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x+1))*((*pos).x-MS_GRID_RES*(currentCell_x+1))+((*pos).y-MS_GRID_RES*(currentCell_y))*((*pos).y-MS_GRID_RES*(currentCell_y)));
+        // nnParams.node_out[3] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x+1))*((*pos).x-MS_GRID_RES*(currentCell_x+1))+((*pos).y-MS_GRID_RES*(currentCell_y))*((*pos).y-MS_GRID_RES*(currentCell_y)));
+        nnParams.node_out[11] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for(uint8_t i = 1; i <= numCells; i++) {
             if (((*pos).y-i*MS_GRID_RES) < 0 || ((*pos).x+i*MS_GRID_RES) > MS_BREDTH) {
                 break;
@@ -275,6 +281,7 @@ void calcInputs(){
         }
 
         nnParams.node_out[5] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x))*((*pos).x-MS_GRID_RES*(currentCell_x))+((*pos).y-MS_GRID_RES*(currentCell_y))*((*pos).y-MS_GRID_RES*(currentCell_y)));
+        nnParams.node_out[13] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for(uint8_t i = 1; i <= numCells; i++) {
             if (((*pos).y-i*MS_GRID_RES) < 0 || ((*pos).x-i*MS_GRID_RES) < 0) {
                 break;
@@ -293,6 +300,7 @@ void calcInputs(){
         }
 
         nnParams.node_out[7] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x))*((*pos).x-MS_GRID_RES*(currentCell_x))+((*pos).y-MS_GRID_RES*(currentCell_y+1))*((*pos).y-MS_GRID_RES*(currentCell_y+1)));
+        nnParams.node_out[15] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for(uint8_t i = 1; i <= numCells; i++) {
             if (((*pos).y+i*MS_GRID_RES) > MS_BREDTH || ((*pos).x-i*MS_GRID_RES) < 0) {
                 break;
@@ -548,9 +556,10 @@ void calcNN() {
     // waypoint_set_enu(wp_id,&newWaypoint);
 
     // THIS IS FOR GUIDED MODE
-    // guidance_h_set_guided_body_vel(outputs[0],outputs[1]);
+    
     // guidance_h_set_guided_vel(outputs[0],outputs[1]); 
-    guidance_h_set_guided_vel(outputs[1],outputs[0]); //This is for optitrack, x and y swapped around!!!
+    // guidance_h_set_guided_vel(outputs[1],outputs[0]); //This is for optitrack, x and y swapped around!!!
+    guidance_h_set_guided_body_vel(outputs[1],outputs[0]);
 
     // return 0;
 }
@@ -609,31 +618,41 @@ void ageMS(void){
             uint8_t tempLimit;
 
             tempLimit = currentCell_x + (uint8_t) (footprint/MS_GRID_RES);
-            lim[0] = min((uint8_t) (MS_LENGTH/MS_GRID_RES),tempLimit); //Right side bound
+            if (tempLimit < (uint8_t) (MS_LENGTH/MS_GRID_RES)){
+                lim[0] = tempLimit;
+            }else{
+                lim[0] = (uint8_t) (MS_LENGTH/MS_GRID_RES);
+            }
 
             tempLimit = (uint8_t) (footprint/MS_GRID_RES);
             if (currentCell_x > tempLimit){
                 lim[1] = currentCell_x-tempLimit;
-            } else { 
+            } else {
                 lim[1] = 0;
             }
 
             tempLimit = currentCell_y + (uint8_t) (footprint/MS_GRID_RES);
-            lim[2] = min((uint8_t) (MS_BREDTH/MS_GRID_RES),tempLimit);  //Top boundry
+            if (tempLimit < (uint8_t) (MS_BREDTH/MS_GRID_RES)){
+                lim[2] = tempLimit;
+            }else{
+                lim[2] = (uint8_t) (MS_BREDTH/MS_GRID_RES);
+            }
 
             tempLimit = (uint8_t) (footprint/MS_GRID_RES);
             if (currentCell_y > tempLimit){
                 lim[3] = currentCell_y-tempLimit;;
-            } else { 
+            } else {
                 lim[3] = 0;
             }
             for (uint8_t i=lim[1];i<=lim[0];i++){
                 for (uint8_t j=lim[3];j<=lim[2];j++){
-                    float x = i*MS_GRID_RES+MS_GRID_RES/2;
-                    float y = j*MS_GRID_RES+MS_GRID_RES/2;
-                    float dist = (x-loopX)*(x-loopX)+(y-loopY)*(y-loopY);
-                    if (dist < (footprint-MS_GRID_RES)*(footprint-MS_GRID_RES)) {
-                        msParams.MS[j][i] = 100;
+                    if (msParams.MS[j][i] != 0){
+                        float x = i*MS_GRID_RES+MS_GRID_RES/2;
+                        float y = j*MS_GRID_RES+MS_GRID_RES/2;
+                        float dist = (x-loopX)*(x-loopX)+(y-loopY)*(y-loopY);
+                        if (dist <= (footprint-MS_GRID_RES/2)*(footprint-MS_GRID_RES/2)) {
+                            msParams.MS[j][i] = 100;
+                        }
                     }
                 }
             }
@@ -671,27 +690,27 @@ void neural_network_init(void) {
     /* Initialise the NN structure: Test 1 
      * Number of nodes: 22
      * Number of connections: 43    */
-    uint8_t assign[22] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,71,78,20,19};
-    memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
+    // uint8_t assign[22] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,71,78,20,19};
+    // memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
 
-    uint8_t assign2[2] = {20,21};
-    memcpy(nnParams.outputIndex, assign2, 2*sizeof(uint8_t));
+    // uint8_t assign2[2] = {20,21};
+    // memcpy(nnParams.outputIndex, assign2, 2*sizeof(uint8_t));
 
-    float connectionsInit[36] = {-5.0315840434,3.449652292,5.5406762516,1.8517735034,-5.7041667863,-5.6688523585,-7.3692722924,3.418286351,8,8,5.9171154969,2.8235996033,-4.090047386,-3.4751704528,4.1989777832,-7.1941945078,-5.2213520003,8,4.0775034873,8,-5.4611103937,-1.1725010766,-8,6.6417367784,5.3697933532,4.6328042655,-4.3059179946,1.1892661373,-8,-6.5313075415,-2.7324348095,-2.0054456291,3.1248600167,0.901027336,6.134547426,-6.3317171363};
-    memcpy(nnParams.connectionsInit, connectionsInit, 36*sizeof(float));
+    // float connectionsInit[36] = {-5.0315840434,3.449652292,5.5406762516,1.8517735034,-5.7041667863,-5.6688523585,-7.3692722924,3.418286351,8,8,5.9171154969,2.8235996033,-4.090047386,-3.4751704528,4.1989777832,-7.1941945078,-5.2213520003,8,4.0775034873,8,-5.4611103937,-1.1725010766,-8,6.6417367784,5.3697933532,4.6328042655,-4.3059179946,1.1892661373,-8,-6.5313075415,-2.7324348095,-2.0054456291,3.1248600167,0.901027336,6.134547426,-6.3317171363};
+    // memcpy(nnParams.connectionsInit, connectionsInit, 36*sizeof(float));
 
-    float connect[7] = {5.5419895544,-5.0294275128,-8,1.4738066378,4.6370676007,0.4914742255,3.1691563089};
-    memcpy(nnParams.connectWeight, connect, 7*sizeof(float));
+    // float connect[7] = {5.5419895544,-5.0294275128,-8,1.4738066378,4.6370676007,0.4914742255,3.1691563089};
+    // memcpy(nnParams.connectWeight, connect, 7*sizeof(float));
 
-    uint8_t connectTo[7] = {71,20,78,19,19,78,78};
-    memcpy(nnParams.connectTo, connectTo, 7*sizeof(uint8_t));
+    // uint8_t connectTo[7] = {71,20,78,19,19,78,78};
+    // memcpy(nnParams.connectTo, connectTo, 7*sizeof(uint8_t));
 
-    uint8_t connectFrom[7] = {3,71,9,78,20,13,18};
-    memcpy(nnParams.connectFrom, connectFrom, 7*sizeof(uint8_t));
+    // uint8_t connectFrom[7] = {3,71,9,78,20,13,18};
+    // memcpy(nnParams.connectFrom, connectFrom, 7*sizeof(uint8_t));
 
-    //     /* Initialise the NN structure: Test 2 NN_8x8_ 
-    //  * Number of nodes: 24
-    //  * Number of connections: 49    */
+    /* Initialise the NN structure: Test 2 NN_8x8_ 
+     * Number of nodes: 24
+     * Number of connections: 49    */
     // uint8_t assign[24] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,44,50,122,31,20};
     // memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
 
@@ -707,7 +726,7 @@ void neural_network_init(void) {
     // uint8_t connectTo[13] = {20,31,20,31,44,20,50,20,50,44,122,20,50};
     // memcpy(nnParams.connectTo, connectTo, 13*sizeof(uint8_t));
 
-    // uint8_t connectFrom[13 = {19,16,31,19,5,44,15,50,12,16,7,122,18};
+    // uint8_t connectFrom[13] = {19,16,31,19,5,44,15,50,12,16,7,122,18};
     // memcpy(nnParams.connectFrom, connectFrom, 13*sizeof(uint8_t));
 
     //     /* Initialise the NN structure: Test 3 NN_8x8_ 
@@ -754,7 +773,7 @@ void neural_network_init(void) {
 
     //     /* Initialise the NN structure: Test 5 NN_8x8_ 
     //  * Number of nodes: 27
-    //  * Number of connections: 45    */
+    //  * Number of connections: 56    */
     // uint8_t assign[27] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,114,118,161,214,246,20,37,51,19};
     // memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
 
@@ -776,7 +795,7 @@ void neural_network_init(void) {
     //     /* Initialise the NN structure: Test 6 NN_8x8_ 
     //  * Number of nodes: 24
     //  * Number of connections: 45    */
-    // uint8_t assign[24] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,108,113,160,267,20,19};
+    // uint8_t assign[24] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,108,113,160,67,20,19};
     // memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
 
     // uint8_t assign2[2] = {22,23};
@@ -788,10 +807,10 @@ void neural_network_init(void) {
     // float connect[9] = {5.7378582669,8,7.8711286625,8,1.1787886016,8,7.2319860396,0.3575651405,-4.6502137885};
     // memcpy(nnParams.connectWeight, connect, 9*sizeof(float));
 
-    // uint8_t connectTo[9] = {19,108,19,113,20,160,19,267,20};
+    // uint8_t connectTo[9] = {19,108,19,113,20,160,19,67,20};
     // memcpy(nnParams.connectTo, connectTo, 9*sizeof(uint8_t));
 
-    // uint8_t connectFrom[9] = {20,10,108,1,113,10,160,3,267};
+    // uint8_t connectFrom[9] = {20,10,108,1,113,10,160,3,67};
     // memcpy(nnParams.connectFrom, connectFrom, 9*sizeof(uint8_t));
 
     //     /* Initialise the NN structure: Test 7 NN_8x8_ 
@@ -860,23 +879,23 @@ void neural_network_init(void) {
     //     /* Initialise the NN structure: Test 10 NN_8x8_ 
     //  * Number of nodes: 25
     //  * Number of connections: 53    */
-    // uint8_t assign[25] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,81,176,279,288,20,24,19};
-    // memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
+    uint8_t assign[25] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,81,176,79,28,20,24,19};
+    memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
 
-    // uint8_t assign2[2] = {22,24};
-    // memcpy(nnParams.outputIndex, assign2, 2*sizeof(uint8_t));
+    uint8_t assign2[2] = {22,24};
+    memcpy(nnParams.outputIndex, assign2, 2*sizeof(uint8_t));
 
-    // float connectionsInit[36] = {0.9207661265,0.2916641679,6.3894245956,-5.876807089,0.7765806776,8,-6.3178346348,-2.7822010832,-3.3798155011,-3.714803467,6.0853213039,8,5.6761756275,-3.7085986736,-0.5377148594,-0.5036210314,-3.506721978,-3.6062296346,5.9613351566,2.1827223686,7.8944220409,1.490843575,-7.6499754755,3.1584498902,-5.713109873,-0.169567458,0.2634392814,-1.2549521905,8,-1.9202406583,-4.0894472533,-8,-0.3977362838,-1.1493322412,-2.5336723479,-0.9165736135};
-    // memcpy(nnParams.connectionsInit, connectionsInit, 36*sizeof(float));
+    float connectionsInit[36] = {0.9207661265,0.2916641679,6.3894245956,-5.876807089,0.7765806776,8,-6.3178346348,-2.7822010832,-3.3798155011,-3.714803467,6.0853213039,8,5.6761756275,-3.7085986736,-0.5377148594,-0.5036210314,-3.506721978,-3.6062296346,5.9613351566,2.1827223686,7.8944220409,1.490843575,-7.6499754755,3.1584498902,-5.713109873,-0.169567458,0.2634392814,-1.2549521905,8,-1.9202406583,-4.0894472533,-8,-0.3977362838,-1.1493322412,-2.5336723479,-0.9165736135};
+    memcpy(nnParams.connectionsInit, connectionsInit, 36*sizeof(float));
 
-    // float connect[17] = {-2.3753024406,7.0288431242,1.8071825873,2.1077574136,-6.6067638161,-1.8846781707,0.2463254068,8,-3.8956754525,2.9413329306,-4.4801971153,-4.3121287736,1.4353793518,-8,2.7579210541,8,0.8827557309};
-    // memcpy(nnParams.connectWeight, connect, 17*sizeof(float));
+    float connect[17] = {-2.3753024406,7.0288431242,1.8071825873,2.1077574136,-6.6067638161,-1.8846781707,0.2463254068,8,-3.8956754525,2.9413329306,-4.4801971153,-4.3121287736,1.4353793518,-8,2.7579210541,8,0.8827557309};
+    memcpy(nnParams.connectWeight, connect, 17*sizeof(float));
 
-    // uint8_t connectTo[17] = {24,19,24,24,81,24,20,176,20,176,24,279,19,81,288,20,24};
-    // memcpy(nnParams.connectTo, connectTo, 17*sizeof(uint8_t));
+    uint8_t connectTo[17] = {24,19,24,24,81,24,20,176,20,176,24,79,19,81,28,20,24};
+    memcpy(nnParams.connectTo, connectTo, 17*sizeof(uint8_t));
 
-    // uint8_t connectFrom[17] = {10,24,5,17,10,81,81,16,176,4,8,8,279,11,2,288,18};
-    // memcpy(nnParams.connectFrom, connectFrom, 17*sizeof(uint8_t));
+    uint8_t connectFrom[17] = {10,24,5,17,10,81,81,16,176,4,8,8,79,11,2,28,18};
+    memcpy(nnParams.connectFrom, connectFrom, 17*sizeof(uint8_t));
 
 
 

@@ -107,8 +107,8 @@ static struct DW1000 dw1000;
 void getPos_UWB(uint8_t index, float positions[2]){
   for(uint8_t i = 0; i <  DW1000_SERIAL_COMM_NUM_TAGS; i++){
     if(states[i].nodeAddress == index){
-      positions[0] = states[index].x;
-      positions[1] = states[index].y;     
+      positions[0] = states[i].x;
+      positions[1] = states[i].y;     
     }
   }
 }
@@ -351,9 +351,20 @@ void local_and_comms_periodic(void) {
 
 void local_and_comms_report(void) {
   struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
-  struct EnuCoor_f *vel = stateGetSpeedEnu_f();
-  printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
-  // printf("%f,%f,%f,%f \n",(*pos2).x,(*pos2).y,states[1].x ,states[1].y ); //for identification
+
+  // float a = 0.827559;
+  // float b = 0.5613786;
+  // float c = -3.903735;
+  // float d = 1.0823;
+
+  // float tempX=(*pos2).x;
+  // float tempY=(*pos2).y;
+  // (*pos2).x = a*tempX+b*tempY+c;
+  // (*pos2).y = -b*tempX+a*tempY+d;
+
+  // struct EnuCoor_f *vel = stateGetSpeedEnu_f();
+  // printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
+  printf("%f,%f,%f,%f \n",(*pos2).x,(*pos2).y,states[1].x ,states[1].y ); //for identification
 }
 
 void local_and_comms_event(void) {
