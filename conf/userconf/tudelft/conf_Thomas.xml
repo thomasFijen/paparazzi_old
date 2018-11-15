@@ -16,7 +16,7 @@
    airframe="airframes/Thesis/Bebop2_NN.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
-   flight_plan="flight_plans/Thesis/guided_FlightPlan.xml"
+   flight_plan="flight_plans/Thesis/guided_FlightPlan_18.xml"
    settings="settings/rotorcraft_basic.xml"
    settings_modules="modules/air_data.xml modules/geo_mag.xml modules/ins_extended.xml modules/gps.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/imu_common.xml"
    gui_color="#ffff00000000"

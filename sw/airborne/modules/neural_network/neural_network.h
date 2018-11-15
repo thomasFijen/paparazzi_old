@@ -35,6 +35,8 @@
 
 float activationFunction(float x);
 void ageMS(void);
+extern bool printMS(void);
+extern void printNode(void);
 extern bool outArea(void);
 extern bool testDistance(void);
  extern void calcInputs(void); 

@@ -158,8 +158,8 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
   if (msgType == UWB_SERIAL_COMM_RANGE)  {
     for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
       if (dw->anchors[i].id == id) {
-        float norm = ((dw->anchors[i].distance - float_from_buf(dw->buf+2))*(dw->anchors[i].distance - float_from_buf(dw->buf+2)));
-        if (norm < 4 || dw->anchors[i].distance == 0) { //Outlier Rejection. Ignore ranges that change by more than 2m
+        float norm = float_from_buf(dw->buf+2);
+        if (norm < 20 || norm > -20) { //Outlier Rejection. Ignore ranges that change by more than 2m
           dw->anchors[i].distance = float_from_buf(dw->buf+2);
           dw->anchors[i].time = get_sys_time_float();
           dw->updated = true;
@@ -265,7 +265,7 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   uint32_t now_ts = get_sys_time_usec();
   
   // -- Call the update function from the UWB GPS code
-  // update_uwb(now_ts, &(dw->gps_dw1000));
+  //update_uwb(now_ts, &(dw->gps_dw1000));
 }
 
 /// init arrays from airframe file
@@ -359,12 +359,15 @@ void local_and_comms_report(void) {
 
   // float tempX=(*pos2).x;
   // float tempY=(*pos2).y;
-  // (*pos2).x = a*tempX+b*tempY+c;
-  // (*pos2).y = -b*tempX+a*tempY+d;
+  // float printX = a*tempX+b*tempY+c;;
+  // float printY = -b*tempX+a*tempY+d;
 
   // struct EnuCoor_f *vel = stateGetSpeedEnu_f();
   // printf("%f,%f,%f,%f,%f,%f,%f,%f,%f \n",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance,(*pos2).x,(*pos2).y,(*pos2).z,(*vel).x,(*vel).y); //for identification
-  printf("%f,%f,%f,%f \n",(*pos2).x,(*pos2).y,states[1].x ,states[1].y ); //for identification
+  
+  //printf("%f,%f,%f,%f \n",(*pos2).x,(*pos2).y,printX ,printY); //for identification
+  // printf("%f,%f \n",(*pos2).x,(*pos2).y); //for identification
+  //printf("%f,%f,%f,%f \n",(*pos2).x,(*pos2).y,states[1].x ,states[1].y ); //for identification
 }
 
 void local_and_comms_event(void) {

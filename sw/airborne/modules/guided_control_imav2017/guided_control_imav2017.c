@@ -102,9 +102,28 @@ bool hoverGuided(float cmd_height){
 bool circle(){
   float velX = 0.0;
   float velY = 0.0;
+          /* Fly in a square pattern */
+        // counter = counter + 1;
+        // if(counter <= 60){
+        //     velX = 0.5;
+        //     velY = 0;
+        // }else if (counter <= 120){
+        //     velX = 0.0;
+        //     velY = -0.5;
+        // }else if (counter <=180){
+        //     velX = -0.5;
+        //     velY = 0.0;
+        // }else if(counter <=240){
+        //     velX = 0.0;
+        //     velY = 0.5;
+        // }else{
+        //     counter = 0.0;
+        // }
+
+  /* Fly in a Circle pattern */
   if(counter <= 360){
     velX = 0.5*cosf(counter*PI/180.0);
-    //velY = 0.5*sinf(counter*PI/180.0);
+    velY = 0.5*sinf(counter*PI/180.0);
     counter = counter + 1;
   } else{
     counter = 0.0;
