@@ -22,7 +22,7 @@
     <file name="uwb_localisation_and_comms.h"/>
   </header>
   <init fun="local_and_comms_init()"/>
-  <periodic fun="local_and_comms_periodic()" freq="30" autorun="TRUE"/>
+  <periodic fun="local_and_comms_periodic()" freq="5" autorun="TRUE"/>
   <periodic fun="local_and_comms_report()" freq="10" autorun="TRUE"/>
   <event fun="local_and_comms_event()"/>
   <makefile>
@@ -30,6 +30,7 @@
     <configure name="UWB_DW1000_UART" case="upper|lower"/>
     <configure name="UWB_DW1000_BAUD" default="B9600"/>
     <file name="multilateration_nlls.c"/> <!-- multilateration_ls ; multilateration_nlls ; trilateration -->
+    <file name="kalmanFilter.c"/>
     <define name="USE_$(UWB_DW1000_UART_UPPER)"/>
     <define name="UWB_DW1000_DEV" value="$(UWB_DW1000_UART_LOWER)"/>
     <define name="$(UWB_DW1000_UART_UPPER)_BAUD" value="$(UWB_DW1000_BAUD)"/>

@@ -85,6 +85,10 @@
 #define MS_CURRENT_ID MS_SWARM_SIZE-1
 #endif
 
+#ifndef MS_FOOTPRINT
+#define MS_FOOTPRINT 0.75
+#endif
+
 #define PI 3.14159265
 
 
@@ -584,7 +588,7 @@ void ageMS(void){
         }
     }
 
-    float footprint = 1.0; //This is the size of the sensor footprint
+    //float footprint = 1.0; //This is the size of the sensor footprint
 
     for (uint8_t agentNum = 0; agentNum < MS_SWARM_SIZE; agentNum++){
         uint8_t currentCell_x = 0;
@@ -620,28 +624,28 @@ void ageMS(void){
             /* Finding cells in range */
             uint8_t tempLimit;
 
-            tempLimit = currentCell_x + (uint8_t) (footprint/MS_GRID_RES);
+            tempLimit = currentCell_x + (uint8_t) (MS_FOOTPRINT/MS_GRID_RES);
             if (tempLimit < (uint8_t) (MS_LENGTH/MS_GRID_RES)){
                 lim[0] = tempLimit;
             }else{
                 lim[0] = (uint8_t) (MS_LENGTH/MS_GRID_RES);
             }
 
-            tempLimit = (uint8_t) (footprint/MS_GRID_RES);
+            tempLimit = (uint8_t) (MS_FOOTPRINT/MS_GRID_RES);
             if (currentCell_x > tempLimit){
                 lim[1] = currentCell_x-tempLimit;
             } else {
                 lim[1] = 0;
             }
 
-            tempLimit = currentCell_y + (uint8_t) (footprint/MS_GRID_RES);
+            tempLimit = currentCell_y + (uint8_t) (MS_FOOTPRINT/MS_GRID_RES);
             if (tempLimit < (uint8_t) (MS_BREDTH/MS_GRID_RES)){
                 lim[2] = tempLimit;
             }else{
                 lim[2] = (uint8_t) (MS_BREDTH/MS_GRID_RES);
             }
 
-            tempLimit = (uint8_t) (footprint/MS_GRID_RES);
+            tempLimit = (uint8_t) (MS_FOOTPRINT/MS_GRID_RES);
             if (currentCell_y > tempLimit){
                 lim[3] = currentCell_y-tempLimit;;
             } else {
@@ -653,7 +657,7 @@ void ageMS(void){
                         float x = i*MS_GRID_RES+MS_GRID_RES/2;
                         float y = j*MS_GRID_RES+MS_GRID_RES/2;
                         float dist = (x-loopX)*(x-loopX)+(y-loopY)*(y-loopY);
-                        if (dist <= (footprint-MS_GRID_RES/2)*(footprint-MS_GRID_RES/2)) {
+                        if (dist <= (MS_FOOTPRINT-MS_GRID_RES/2)*(MS_FOOTPRINT-MS_GRID_RES/2)) {
                             msParams.MS[j][i] = 100;
                         }
                     }
@@ -991,44 +995,44 @@ void neural_network_init(void) {
         /* Initialise the NN structure: Test 5 NN_7x7_ 
      * Number of nodes: 26
      * Number of connections: 55    */
-    // uint8_t assign[26] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,83,121,178,35,172,20,44,19};
-    // memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
+    uint8_t assign[26] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,83,121,178,35,172,20,44,19};
+    memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
 
-    // uint8_t assign2[2] = {25,23};
-    // memcpy(nnParams.outputIndex, assign2, 2*sizeof(uint8_t));
+    uint8_t assign2[2] = {25,23};
+    memcpy(nnParams.outputIndex, assign2, 2*sizeof(uint8_t));
 
-    // float connectionsInit[36] = {3.8360311297,2.49015626,2.3169669735,-5.0755323134,-5.0578197772,-3.5591546915,-5.7928456906,4.9633766254,3.8503515232,5.9693259022,6.760043058,-6.6504926017,-3.315801608,-2.9028842763,-1.1976721678,0.9257645116,-6.5627287018,7.2830931274,-0.182095891,8,-1.0011790023,-5.134037816,8,2.9646068681,3.8619043883,-0.6331326088,4.1374115418,4.83178036,-6.0994057187,-7.1519338478,-8,-5.837795278,-1.6632439276,3.4829779104,3.5911153692,-2.5911586785};
-    // memcpy(nnParams.connectionsInit, connectionsInit, 36*sizeof(float));
+    float connectionsInit[36] = {3.8360311297,2.49015626,2.3169669735,-5.0755323134,-5.0578197772,-3.5591546915,-5.7928456906,4.9633766254,3.8503515232,5.9693259022,6.760043058,-6.6504926017,-3.315801608,-2.9028842763,-1.1976721678,0.9257645116,-6.5627287018,7.2830931274,-0.182095891,8,-1.0011790023,-5.134037816,8,2.9646068681,3.8619043883,-0.6331326088,4.1374115418,4.83178036,-6.0994057187,-7.1519338478,-8,-5.837795278,-1.6632439276,3.4829779104,3.5911153692,-2.5911586785};
+    memcpy(nnParams.connectionsInit, connectionsInit, 36*sizeof(float));
 
-    // float connect[19] = {0.7836012949,5.6957320684,-6.20957576,-3.8830001835,4.9996944861,0.504374047,-7.7319598887,6.8601192968,-7.0229238536,6.6897944871,7.1981552966,-4.3816151683,6.1408971153,-5.8992214925,0.8324769484,-7.4224343841,3.0631446286,2.1324622758,-4.9620109689};
-    // memcpy(nnParams.connectWeight, connect, 19*sizeof(float));
+    float connect[19] = {0.7836012949,5.6957320684,-6.20957576,-3.8830001835,4.9996944861,0.504374047,-7.7319598887,6.8601192968,-7.0229238536,6.6897944871,7.1981552966,-4.3816151683,6.1408971153,-5.8992214925,0.8324769484,-7.4224343841,3.0631446286,2.1324622758,-4.9620109689};
+    memcpy(nnParams.connectWeight, connect, 19*sizeof(float));
 
-    // uint8_t connectTo[19] = {35,20,44,19,44,44,44,83,20,83,35,121,20,83,44,172,20,178,19};
-    // memcpy(nnParams.connectTo, connectTo, 19*sizeof(uint8_t));
+    uint8_t connectTo[19] = {35,20,44,19,44,44,44,83,20,83,35,121,20,83,44,172,20,178,19};
+    memcpy(nnParams.connectTo, connectTo, 19*sizeof(uint8_t));
 
-    // uint8_t connectFrom[19] = {10,35,9,44,14,2,10,12,83,3,83,3,121,11,20,121,172,15,178};
-    // memcpy(nnParams.connectFrom, connectFrom, 19*sizeof(uint8_t));
+    uint8_t connectFrom[19] = {10,35,9,44,14,2,10,12,83,3,83,3,121,11,20,121,172,15,178};
+    memcpy(nnParams.connectFrom, connectFrom, 19*sizeof(uint8_t));
 
         /* Initialise the NN structure: Test 6 NN_7x7_ 
      * Number of nodes: 27
      * Number of connections: 56    */
-    uint8_t assign[27] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,114,118,161,214,246,20,37,51,19};
-    memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
+    // uint8_t assign[27] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,114,118,161,214,246,20,37,51,19};
+    // memcpy(nnParams.node_ID, assign, MS_NUM_NODES*sizeof(uint8_t));
 
-    uint8_t assign2[2] = {26,23};
-    memcpy(nnParams.outputIndex, assign2, 2*sizeof(uint8_t));
+    // uint8_t assign2[2] = {26,23};
+    // memcpy(nnParams.outputIndex, assign2, 2*sizeof(uint8_t));
 
-    float connectionsInit[36] = {-2.8091017067,2.6741037075,-4.6015922549,4.6325198884,4.8532889623,-3.5552078536,-4.4989754347,0.3397705017,-2.9772177469,4.4209120523,5.655344226,8,8,-4.0615316286,-3.6736217289,-8,-7.9393996088,2.4260497856,1.6931853283,-6.5873521746,4.0607365365,8,-7.427368745,-4.9067494669,-4.4042494256,-0.0995998256,-0.867260592,6.3896835486,8,1.2564087087,-5.7691738934,-3.9033576622,-3.1834793722,8,7.7997984038,-7.7926582052};
-    memcpy(nnParams.connectionsInit, connectionsInit, 36*sizeof(float));
+    // float connectionsInit[36] = {-2.8091017067,2.6741037075,-4.6015922549,4.6325198884,4.8532889623,-3.5552078536,-4.4989754347,0.3397705017,-2.9772177469,4.4209120523,5.655344226,8,8,-4.0615316286,-3.6736217289,-8,-7.9393996088,2.4260497856,1.6931853283,-6.5873521746,4.0607365365,8,-7.427368745,-4.9067494669,-4.4042494256,-0.0995998256,-0.867260592,6.3896835486,8,1.2564087087,-5.7691738934,-3.9033576622,-3.1834793722,8,7.7997984038,-7.7926582052};
+    // memcpy(nnParams.connectionsInit, connectionsInit, 36*sizeof(float));
 
-    float connect[20] = {8,5.5355986776,1.2715111607,2.2143856422,-6.7359031381,-3.4954358239,0.3055464248,5.0153428298,-2.5186258593,-4.3595752604,-5.275183538,4.7457404928,2.6898826361,4.1137965015,-6.8298555124,-3.8618539315,-3.7971203302,-1.4644760523,-1.0048656372,1.2711435629};
-    memcpy(nnParams.connectWeight, connect, 20*sizeof(float));
+    // float connect[20] = {8,5.5355986776,1.2715111607,2.2143856422,-6.7359031381,-3.4954358239,0.3055464248,5.0153428298,-2.5186258593,-4.3595752604,-5.275183538,4.7457404928,2.6898826361,4.1137965015,-6.8298555124,-3.8618539315,-3.7971203302,-1.4644760523,-1.0048656372,1.2711435629};
+    // memcpy(nnParams.connectWeight, connect, 20*sizeof(float));
 
-    uint8_t connectTo[20] = {37,19,51,19,114,19,118,51,161,19,37,37,37,214,19,51,118,246,20,114};
-    memcpy(nnParams.connectTo, connectTo, 20*sizeof(uint8_t));
+    // uint8_t connectTo[20] = {37,19,51,19,114,19,118,51,161,19,37,37,37,214,19,51,118,246,20,114};
+    // memcpy(nnParams.connectTo, connectTo, 20*sizeof(uint8_t));
 
-    uint8_t connectFrom[20] = {6,37,2,51,5,114,2,118,18,161,8,114,17,15,214,11,11,7,246,17};
-    memcpy(nnParams.connectFrom, connectFrom, 20*sizeof(uint8_t));
+    // uint8_t connectFrom[20] = {6,37,2,51,5,114,2,118,18,161,8,114,17,15,214,11,11,7,246,17};
+    // memcpy(nnParams.connectFrom, connectFrom, 20*sizeof(uint8_t));
 
         /* Initialise the NN structure: Test 7 NN_7x7_ 
      * Number of nodes: 27

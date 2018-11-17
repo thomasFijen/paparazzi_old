@@ -31,17 +31,20 @@
     u = [vel X; vel Y]; X = [accel x, vel x, accel y, vel y, x, y]
 */
 
-#include "kalmanFilter.h"
+#include "modules/decawave/kalmanFilter.h"
 
 void kalman_filter(float out[6], float X_old[6], float u[2], float x, float y)
 {
   //--Discretised model
-  float phi[36] = {0.8942,-2.4404,0,0,0,0,0.0018,0.9976,0,0,0,0,0,0,0.8942,-2.4404,0,0,0,0,0.0018,0.9976,0,0,0,0.002,0,0,1,0,0,0,0,0.002,0,1};
-  float gamma[12] = {2.4404,0,0.0024,0,0,2.4404,0,0.0024,0,0,0,0};
+  float phi[36] = {-0.00021471,-0.66068,0,0,0,0,0.00027864,0.85739,0,0,0,0,0,0,-0.00021471,-0.66068,0,0,0,0,0.00027864,0.85739,0,0,6.0146e-05,0.1854,0,0,1,0,0,0,6.0146e-05,0.1854,0,1};
+  float gamma[12] = {0.66068,0,0.14261,0,0,0.66068,0,0.14261,0.014603,0,0,0.014603};
   float Cd[12] = {0,0,0,0,1,0,0,0,0,0,0,1};
 
-  float K[12] = {-0.008*1.0e-4,0,0,0,0.001*1.0e-4,-0.0049*1.0e-4,0,0.0001*1.0e-4,0.7365*1.0e-4,-0.009*1.0e-4,-0.009*1.0e-4,0.9060*1.0e-4};
+  float K[12] = {-8.285e-06,-8.4661e-07,1.0752e-05,1.0987e-06,-3.3864e-06,-5.6214e-05,4.3947e-06,7.2951e-05,0.0028392,9.1258e-05,0.00026145,0.0062862};
   float X_hat[6] = {0,0,0,0,0,0};
+
+  float kp = 0.4; //P controller gain.
+  float U_err[2] = {kp*(u[0]-X_old[1]),kp*(u[1]-X_old[3])};
 
   //--Temporary storage variables
   float temp_6x1[6];
@@ -51,7 +54,7 @@ void kalman_filter(float out[6], float X_old[6], float u[2], float x, float y)
 
   //Determine X_hat from the model 
   mat_mult_6x6_6x1(temp_6x1, phi, X_old);
-  mat_mult_6x2_2x1(temp2_6x1, gamma, u);
+  mat_mult_6x2_2x1(temp2_6x1, gamma, U_err);
   mat_add_6x1(X_hat,temp_6x1,temp2_6x1);
     
   //Update the estimate with the Kalman gain

@@ -26,7 +26,7 @@
 #include "modules/decawave/uwb_localisation_and_comms.h"
 #include "modules/decawave/multilateration_nlls.h"
 //#include "modules/decawave/trilateration.h"
-// #include "kalmanFilter.h"
+#include "modules/decawave/kalmanFilter.h"
 
 #include "std.h"
 #include "mcu_periph/uart.h"
@@ -72,8 +72,9 @@
 
 static bool _inProgress = false;
 static uint8_t _varByte = 0;
-// static float X_old_kal[6] = {0,0,0,0,0,0};
-// static float X_new_kal[6] = {0,0,0,0,0,0};
+static float uk[2] = {0,0};
+static float X_old_kal[6] = {0,0,0,0,0,0};
+static float X_new_kal[6] = {0,0,0,0,0,0};
 
 #define UWB_SERIAL_PORT (&((UWB_DW1000_DEV).device))
 struct link_device *external_device = UWB_SERIAL_PORT;
@@ -220,23 +221,6 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
   float z = (*pos2).z; //-- This just needs to be checked, this might be the problem on takeoff. Rather read in the sonar value
 
-  //-- Applying the Kalman filter:
-  /*struct EnuCoor_f *vel = stateGetSpeedEnu_f();
-  float uk[2] = {(*vel).x,(*vel).y};
-  kalman_filter(X_new_kal, X_old_kal, uk, x, y);
-  
-  enu_pos.x = (int32_t) (X_new_kal[4] * 100);
-  enu_pos.y = (int32_t) (X_new_kal[5] * 100);
-  
-  X_old_kal[1] = X_new_kal[1];
-  X_old_kal[2] = X_new_kal[2];
-  X_old_kal[3] = X_new_kal[3];
-  X_old_kal[4] = X_new_kal[4];
-  X_old_kal[5] = X_new_kal[5];
-  X_old_kal[0] = X_new_kal[0]; */
-  
-  // --- End of the Kalman filter ---
-  
   enu_pos.x = (int32_t) (x * 100);
   enu_pos.y = (int32_t) (y * 100);
   enu_pos.z = (int32_t) (z * 100); // dw->pos.
@@ -341,12 +325,57 @@ void local_and_comms_init(void) {
   // }
 }
 
+/*
+* This function stores the commanded speed for the Kalman filter.
+*/
+void commandSpeed(float u_command[2]){
+  uk[0] = u_command[0];
+  uk[1] = u_command[1];
+}
+
+/*
+* This function periodically calculates the current position based on the ranges to the anchors, and updates the GPS coordinates. 
+* Finaly sends the position to the Arduino to be broadcast by the UWB module
+*/
 void local_and_comms_periodic(void) {
+  //if (dw1000.updated) {
+    uint8_t temp;
+
+    /* Estimate the postion based on NLLS */
+    temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);  //This is for NLLS multilateration
+    
+    /* Apply the Kalman filter on the estimated position */
+    // kalman_filter(X_new_kal, X_old_kal, uk, dw1000.pos.x, dw1000.pos.y);
+    float x = 1;
+    float y = 1;
+    kalman_filter(X_new_kal, X_old_kal, uk, x, y);
+    
+    X_old_kal[0] = X_new_kal[0]; 
+    X_old_kal[1] = X_new_kal[1];
+    X_old_kal[2] = X_new_kal[2];
+    X_old_kal[3] = X_new_kal[3];
+    X_old_kal[4] = X_new_kal[4];
+    X_old_kal[5] = X_new_kal[5];
+    
+    dw1000.pos.x = X_old_kal[4];
+    dw1000.pos.y = X_old_kal[5];
+  
+    if (temp == 0) { 
+      // apply scale and neutral corrections
+      scale_position(&dw1000);
+      // send fake GPS message for INS filters
+      send_gps_dw1000_small(&dw1000);
+    }
+    if(temp == -1)  {
+      printf("ERROR: multilateration failed \n");
+    }
+    dw1000.updated = false;
+  //}
+
+  /* Send position to Arduino over the UART */
   struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
   sendFloat(UWB_SERIAL_COMM_X, (*pos2).x);
   sendFloat(UWB_SERIAL_COMM_Y, (*pos2).y);
-  // sendFloat(UWB_SERIAL_COMM_X,5.5);
-  // sendFloat(UWB_SERIAL_COMM_Y, 3.5);
 }
 
 void local_and_comms_report(void) {
@@ -373,23 +402,23 @@ void local_and_comms_report(void) {
 void local_and_comms_event(void) {
   dw1000_arduino_parse(&dw1000);
 
-  if (dw1000.updated) {
-    uint8_t temp;
-    // if (TRILAT) {
-    //   temp = trilateration_compute(dw1000.anchors, &dw1000.raw_pos);         //This is for trilateration
-    // } else {
-    //   temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);  //This is for NLLS multilateration
-    // }
-    temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);  //This is for NLLS multilateration
-    if (temp == 0) { 
-      // apply scale and neutral corrections
-      scale_position(&dw1000);
-      // send fake GPS message for INS filters
-      send_gps_dw1000_small(&dw1000);
-    }
-    if(temp == -1)  {
-      printf("ERROR: trilateration failed \n");
-    }
-    dw1000.updated = false;
-  }
+  // if (dw1000.updated) {
+  //   uint8_t temp;
+  //   // if (TRILAT) {
+  //   //   temp = trilateration_compute(dw1000.anchors, &dw1000.raw_pos);         //This is for trilateration
+  //   // } else {
+  //   //   temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);  //This is for NLLS multilateration
+  //   // }
+  //   temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);  //This is for NLLS multilateration
+  //   if (temp == 0) { 
+  //     // apply scale and neutral corrections
+  //     scale_position(&dw1000);
+  //     // send fake GPS message for INS filters
+  //     send_gps_dw1000_small(&dw1000);
+  //   }
+  //   if(temp == -1)  {
+  //     printf("ERROR: trilateration failed \n");
+  //   }
+  //   dw1000.updated = false;
+  // }
 }

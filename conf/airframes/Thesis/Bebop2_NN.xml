@@ -254,11 +254,12 @@
       <define name="NUM_INPUTS" value="18" type="uint8_t" />
       <define name="NUM_OUTPUTS" value="2" type="uint8_t" />
       <define name="SWARM_SIZE" value="2" type="uint8_t" />
-      <define name="NUM_NODES" value="27" type="uint8_t" />
-      <define name="NUM_CONNECT" value="56" type="uint8_t" />
+      <define name="NUM_NODES" value="26" type="uint8_t" />
+      <define name="NUM_CONNECT" value="55" type="uint8_t" />
       <define name="MAX_VEL" value="0.3" type="float" />
       <define name="CURRENT_ID" value="0" type="uint8_t" />
       <define name="SENSOR_RANGE" value="3.5" type="float" />
+      <define name="FOOTPRINT" value="1.0" type="float" />
   </section>
 
 <!-- Multilateration with comms Optitrack positioning-->
@@ -280,7 +281,7 @@
     <define name="ANCHORS_IDS" value="1, 2, 3, 4" type="int[]"/>
     <define name="ANCHORS_POS_X" value="2.42, 4.82, 7.0, 0.0" type="float[]"/> 
     <define name="ANCHORS_POS_Y" value="0.0, 0.0, 9.0, 9.0" type="float[]"/>
-    <define name="ANCHORS_POS_Z" value="0.8, 0.8, 0., 0." type="float[]"/>
+    <define name="ANCHORS_POS_Z" value="0.8, 0.8, 1.12, 0.3" type="float[]"/>
     <define name="OFFSET" value="0.0, 0.0, 0.0, 0.0" type="float[]"/>
     <define name="SCALE" value="1.0,1.0,1.0,1.0" type="float[]"/>
     <define name="INITIAL_HEADING" value="0.0"/>
