@@ -32,6 +32,8 @@
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "subsystems/navigation/waypoints.h"
 #include "modules/decawave/uwb_localisation_and_comms.h"
+#include "mcu_periph/sys_time_arch.h"
+#include "subsystems/electrical.h"
 
 #ifndef MS_LENGTH
 #define MS_LENGTH 7.0f
@@ -89,6 +91,18 @@
 #define MS_FOOTPRINT 0.75
 #endif
 
+#ifndef MS_DIST_THRESH
+#define MS_DIST_THRESH 1.0
+#endif
+
+#ifndef MS_DEPOT_X
+#define MS_DEPOT_X 1.0
+#endif
+
+#ifndef MS_DEPOT_Y
+#define MS_DEPOT_Y 1.0
+#endif
+
 #define PI 3.14159265
 
 
@@ -117,6 +131,11 @@ struct NN_struct {
     uint8_t outputIndex[MS_NUM_OUTPUTS];
     uint8_t node_ID [MS_NUM_NODES];
     float node_out [MS_NUM_NODES];
+
+    bool surveillanceOn;
+    bool depotFree;
+    bool land;
+    uint32_t currentTime;
 };
 
 /** This function determines the inputs into the NN */
@@ -444,9 +463,16 @@ float activationFunction(float x) {
     return output;
 }
 
+/* This function is used to turn the calcNN on and off. Only used if calcNN is defined as a periodic function */
+void runSurviellance(){
+    nnParams.surveillanceOn = TRUE;
+}
+
 /** This function calculates the outputs of the NN */
 void calcNN() {
-    uint8_t recurrentNN = 0;
+    uint8_t recurrentNN = 0; // Boolean showing whether the NN is a recurrent network or not
+    nnParams.currentTime = get_sys_time_msec();
+
     // Reset the node_out to zero for the new calculation
     for (uint8_t nodeNum = MS_NUM_INPUTS; nodeNum < MS_NUM_NODES; nodeNum++){
         nnParams.node_out[nodeNum] = 0;
@@ -542,23 +568,6 @@ void calcNN() {
     outputs[0] = outputs[0]*MS_MAX_VEL*cosf(theta);
     outputs[1] = outputs[1]*MS_MAX_VEL*sinf(theta);
 
-    // // Flying in NAV mode 
-    // struct EnuCoor_f newWaypoint;
-    // struct EnuCoor_f *pos = stateGetPositionEnu_f();
-
-    /* Conversion between coordinate systems */
-    // float a = 0.827559;
-    // float b = 0.5613786;
-    // float c = -3.903735;
-    // float d = 1.0823;
-
-    // newWaypoint.x = a*((*pos).x+outputs[0]*MS_TIME_STEP)+b*((*pos).y+outputs[1]*MS_TIME_STEP)+c; 
-    // newWaypoint.y = -b*((*pos).x+outputs[0]*MS_TIME_STEP)+a*((*pos).y+outputs[1]*MS_TIME_STEP)+d;
-
-    // newWaypoint.x = (*pos).x+outputs[0]*MS_TIME_STEP; 
-    // newWaypoint.y = (*pos).y+outputs[1]*MS_TIME_STEP;
-    // newWaypoint.z=(*pos).z;
-    // waypoint_set_enu(wp_id,&newWaypoint);
 
     // THIS IS FOR GUIDED MODE
     
@@ -566,6 +575,11 @@ void calcNN() {
     // guidance_h_set_guided_vel(outputs[1],outputs[0]); //This is for optitrack, x and y swapped around!!!
     guidance_h_set_guided_body_vel(outputs[1],outputs[0]);
 
+    /* Update the commanded speed for the Kalman filter */
+    float u_command[2] = {outputs[0],outputs[1]};
+    commandSpeed(u_command);
+
+    nnParams.currentTime = get_sys_time_msec()-nnParams.currentTime;
     printNode(); //This is for debugging 
     // return 0;
 }
@@ -682,16 +696,15 @@ void neural_network_init(void) {
             }
         }
     }
-    
+
     msParams.sensorRange = MS_SENSOR_RANGE;
     /* Starting positions of the Drones */
     msParams.uavs[0].x = 3.5;
     msParams.uavs[0].y = 3.5;
-    // msParams.uavs[1].x = 0.5;
-    // msParams.uavs[1].y = 0.5;
-    // msParams.uavs[2].x = 11;
-    // msParams.uavs[2].y = 11;
 
+    nnParams.surveillanceOn = FALSE;
+    nnParams.land = FALSE;
+    nnParams.depotFree = TRUE;
 
 /* _____________________________________________ NN for final data___________________________________________________ */
     /* Initialise the NN structure: Test 1 NN_8x8_ 
@@ -1504,7 +1517,7 @@ void printNode(){
     // float printY = -b*tempX+a*tempY+d;
 
     // printf("\n%f,%f,%f,%f,%f,%f",printX,printY,(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y);
-    printf("\n%f,%f,%f,%f",(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y);
+    printf("\n%f,%f,%f,%f,%i",(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y,nnParams.currentTime);
 
     for (uint8_t i =0; i < 18;i++){
         printf(",%f",nnParams.node_out[i]);
@@ -1515,3 +1528,123 @@ void printNode(){
 /*void neural_network_periodic(void) {
     
 }*/
+
+/* Implements the Homing behaviour*/
+void homing(float xPos, float yPos){
+    float dist = sqrtf((msParams.uavs[MS_CURRENT_ID].x-xPos)*(msParams.uavs[MS_CURRENT_ID].x-xPos)+(msParams.uavs[MS_CURRENT_ID].y-yPos)*(msParams.uavs[MS_CURRENT_ID].y-yPos));
+    float theta
+    float out[2];
+    if (xPos > msParams.uavs[MS_CURRENT_ID].x) {
+        if (yPos > msParams.uavs[MS_CURRENT_ID].y) {
+            theta = atanf((xPos-msParams.uavs[MS_CURRENT_ID].x)/(yPos-msParams.uavs[MS_CURRENT_ID].y));
+        }
+        else {
+            theta = PI/2+fabs(atanf((yPos-msParams.uavs[MS_CURRENT_ID].y)/(xPos-msParams.uavs[MS_CURRENT_ID].x)));
+        }
+        
+    } else {
+        if (depot.posY > agent.posY) {
+            theta = 1.5*PI+fabs(atanf((yPos-msParams.uavs[MS_CURRENT_ID].y)/(xPos-msParams.uavs[MS_CURRENT_ID].x)));
+        }
+        else {
+            theta = 1.5*PI-fabs(atanf((yPos-msParams.uavs[MS_CURRENT_ID].y)/(xPos-msParams.uavs[MS_CURRENT_ID].x))); 
+        }
+    } 
+
+    if (dist > (MS_MAX_VEL*MS_TIME_STEP)) {
+        out[0] = MS_MAX_VEL*sinf(theta);   % x vel
+        out[1] = MS_MAX_VEL*cosf(theta);   % Y vel
+    } else {
+        out[0] = dist*sinf(theta)/MS_TIME_STEP;
+        out[1] = dist*cosf(theta)/MS_TIME_STEP;
+    }
+    /* Set the comaanded speed */
+    guidance_h_set_guided_body_vel(out[1],out[0]);
+
+    /* Update the commanded speed for the Kalman filter */
+    commandSpeed(out);   
+    
+}
+
+/* Implements a basic avoidance stratergy. Right turn if UAVs become too close */
+void avoid() {
+    float theta = 0.25*PI; // This is the turn angle that will be implemented. In this case, 45 deg right turn.
+    float velocity[2];
+
+     
+}
+
+/*  */
+
+/* This implements the refuelling Behaviour tree */
+void behaviourTree(){
+    /* Conversion between coordinate systems */
+    float a = 0.827559;
+    float b = 0.5613786;
+    float c = -3.903735;
+    float d = 1.0823;
+
+    for(uint8_t i=0;i<MS_SWARM_SIZE;i++){
+        float temp[2];
+        getPos_UWB((i+2),temp);             //!!!!!!!!!!!!!!!! MAGIC NUMBER: BEWARE!!!!!!
+        msParams.uavs[i].x = temp[0];
+        msParams.uavs[i].y = temp[1];
+
+        msParams.uavs[i].x = a*temp[0]+b*temp[1]+c;
+        msParams.uavs[i].y = -b*temp[0]+a*temp[1]+d;
+    }
+    struct EnuCoor_f *pos_BT = stateGetPositionEnu_f();
+    float tempX=(*pos_BT).x;
+    float tempY=(*pos_BT).y;
+    (*pos_BT).x = a*tempX+b*tempY+c;
+    (*pos_BT).y = -b*tempX+a*tempY+d;
+    msParams.uavs[MS_CURRENT_ID].x = (*pos_BT).x;
+    msParams.uavs[MS_CURRENT_ID].y = (*pos_BT).y;
+
+    /* The BT: Assumes that the charging depot is inside the MS */
+    if ((*pos_BT).x <= MS_LENGTH && (*pos_BT).x >= 0 && (*pos_BT).x <= MS_BREDTH && (*pos_BT).y >= 0) {
+        uint8_t currentCell_x = (uint8_t) ((*pos_BT).x/MS_GRID_RES);
+        uint8_t currentCell_y = (uint8_t) ((*pos_BT).y/MS_GRID_RES);
+        float dist = 5;
+
+        /* Find distance to nearst other UAV */
+        for(uint8_t i=0;MS_SWARM_SIZE;i++){
+            if (i != MS_CURRENT_ID) {
+                float tempDist = ((*pos_BT).x-msParams.uavs[i].x)*((*pos_BT).x-msParams.uavs[i].x)+((*pos_BT).y-msParams.uavs[i].y)*((*pos_BT).y-msParams.uavs[i].y);
+                if (tempDist < dist) {
+                    dist = tempDist;
+                }
+            }
+        }
+        if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {
+            avoid();
+        } else if(msParams.MS[currentCell_y][currentCell_x] == 0){
+            homing(5.0,5.0);
+        } else if (electrical.bat_low) {
+            if (nnParams.depotFree == FALSE) {
+                /* If Depot is free and fuel is low, go and charge */
+                dist = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
+                if (dist <= 0.01) {
+                    nnParams.land = TRUE;
+                }else {
+                    homing(MS_DEPOT_X,MS_DEPOT_Y);
+                }
+            }else if (electrical.bat_critical){
+                /* If fuel very low, return to depot */
+                dist = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
+                if (dist <= 0.01) {
+                    nnParams.land = TRUE;
+                }else {
+                    homing(MS_DEPOT_X,MS_DEPOT_Y);
+                }
+            }
+        } else {
+            /* Default case is surveillance */
+            calcNN();
+        }
+    }
+    else{
+        //Return to the centre of the MS 
+        homing(5.0,5.0);
+    }
+}

@@ -35,6 +35,10 @@
 
 float activationFunction(float x);
 void ageMS(void);
+void homing(float xPos, float yPos);
+void avoid(void); 
+void behaviourTree(void);
+extern void runSurviellance(void); //Use this if calcNN is set as a periodic function. 
 extern bool printMS(void);
 extern void printNode(void);
 extern bool outArea(void);
