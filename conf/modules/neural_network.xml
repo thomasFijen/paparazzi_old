@@ -25,6 +25,8 @@
   </header>
   <init fun="neural_network_init()"/>
  <!-- <periodic fun="neural_network_periodic()" freq="10" autorun="TRUE"/> -->
+ <periodic fun="calcNN()" freq="4" autorun="TRUE"/>
+ <!-- <periodic fun="behaviourTree()" freq="4" autorun="TRUE"/> -->
  <periodic fun="ageMS()" freq="4" autorun="TRUE"/>
   <makefile>
     <file name="neural_network.c"/>

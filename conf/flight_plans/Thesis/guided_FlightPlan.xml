@@ -84,10 +84,13 @@
       </while>
     </block>
     <block name="Survey">
+      <call_once fun="runSurviellance()"/>
       <while cond="TRUE">
+      </while>
+      <!-- <while cond="TRUE">
         <call_once fun="calcNN()"/>
         <while cond="0.25 > stage_time"/>
-      </while>
+      </while> -->
     </block>
     <block name="circle">
       <for var="i" from="0" to="80">
@@ -96,6 +99,7 @@
       </for>
     </block>
     <block name="Land" strip_button="Land Here" strip_icon="land-right.png">
+      <call_once fun="runSurviellance()"/>
       <call_once fun="printMS()"/>
       <while cond="TRUE">
         <call fun="goLand()"/>

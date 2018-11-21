@@ -59,21 +59,6 @@
 #define MS_GRID_NUM_CELLS 128
 #endif
 
-#ifndef MS_NUM_INPUTS
-#define MS_NUM_INPUTS 18
-#endif
-
-#ifndef MS_NUM_OUTPUTS
-#define MS_NUM_OUTPUTS 2
-#endif
-
-#ifndef MS_NUM_NODES
-#define MS_NUM_NODES 24
-#endif
-
-#ifndef MS_NUM_CONNECT
-#define MS_NUM_CONNECT 49
-#endif
 
 #ifndef MS_MAX_VEL
 #define MS_MAX_VEL 1.0f
@@ -92,7 +77,11 @@
 #endif
 
 #ifndef MS_DIST_THRESH
-#define MS_DIST_THRESH 1.0
+#define MS_DIST_THRESH 0.8
+#endif
+
+#ifndef MS_DIST_THRESH_2
+#define MS_DIST_THRESH_2 1.0
 #endif
 
 #ifndef MS_DEPOT_X
@@ -103,19 +92,27 @@
 #define MS_DEPOT_Y 1.0
 #endif
 
+#ifndef MS_NUM_INPUTS
+#define MS_NUM_INPUTS 18
+#endif
+
+#ifndef MS_NUM_OUTPUTS
+#define MS_NUM_OUTPUTS 2
+#endif
+
+#ifndef MS_NUM_NODES
+#define MS_NUM_NODES 24
+#endif
+
+#ifndef MS_NUM_CONNECT
+#define MS_NUM_CONNECT 49
+#endif
+
 #define PI 3.14159265
 
 
 static struct MS_Struct msParams;
 static struct NN_struct nnParams;
-/** Mission Space Parameter structure */
-struct MS_Struct {
-    // uint8_t MS[(uint8_t) (MS_BREDTH/MS_GRID_RES)][(uint8_t) (MS_LENGTH/MS_GRID_RES)];
-    // uint8_t MS[14][14];
-    float MS[14][14];
-    float sensorRange;
-	struct EnuCoor_f uavs[MS_SWARM_SIZE];
-};
 
 /** Structure containing NN parameters */
 struct NN_struct {
@@ -132,10 +129,20 @@ struct NN_struct {
     uint8_t node_ID [MS_NUM_NODES];
     float node_out [MS_NUM_NODES];
 
-    bool surveillanceOn;
-    bool depotFree;
-    bool land;
+    bool surveillanceOn;    //Flag indicating that the MAV can perform the surveillance task
+    bool depotFree;         //Flag indicating that the depot is unused
+    bool land;              // Flag showing that the MAV must land
+    bool avoid;             // Avoid flag. Indicates the MAV is performing an avoidance move
     uint32_t currentTime;
+};
+
+/** Mission Space Parameter structure */
+struct MS_Struct {
+    // uint8_t MS[(uint8_t) (MS_BREDTH/MS_GRID_RES)][(uint8_t) (MS_LENGTH/MS_GRID_RES)];
+    // uint8_t MS[14][14];
+    float MS[14][14];
+    float sensorRange;
+	struct EnuCoor_f uavs[MS_SWARM_SIZE];
 };
 
 /** This function determines the inputs into the NN */
@@ -352,37 +359,45 @@ void calcInputs(){
                         float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
                         if(agentCell_y >= currentCell_y && distance < nnParams.node_out[0]){
                             nnParams.node_out[0] = distance;
+                            nnParams.node_out[8] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
                         } else if (agentCell_y < currentCell_y && distance < nnParams.node_out[4]) {
                             nnParams.node_out[4] = distance;
+                            nnParams.node_out[12] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
                         }
                     }
                     else if (agentCell_y == currentCell_y){
                         float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
                         if(agentCell_x >= currentCell_x && distance < nnParams.node_out[2]){
                             nnParams.node_out[2] = distance;
+                            nnParams.node_out[10] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
                         } else if (agentCell_x < currentCell_x && distance < nnParams.node_out[6]) {
                             nnParams.node_out[6] = distance;
+                            nnParams.node_out[14] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
                         }
                     }
                     else if ((agentCell_y-currentCell_y) == (agentCell_x-currentCell_x) && agentCell_x >= currentCell_x ) {
                         float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
                         if(distance < nnParams.node_out[1]){
                             nnParams.node_out[1] = distance;
+                            nnParams.node_out[9] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
                         }
                     } else if ((currentCell_y-agentCell_y) == (agentCell_x-currentCell_x) && agentCell_x >= currentCell_x){
                         float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
                         if(distance < nnParams.node_out[3]){
                             nnParams.node_out[3] = distance;
+                            nnParams.node_out[11] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
                         }
                     } else if ((currentCell_y-agentCell_y) == (currentCell_x-agentCell_x) && agentCell_x < currentCell_x) {
                         float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
                         if(distance < nnParams.node_out[5]){
                             nnParams.node_out[5] = distance;
+                            nnParams.node_out[13] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
                         }
                     } else if ((agentCell_y-currentCell_y) == (currentCell_x-agentCell_x) && agentCell_x < currentCell_x) {
                         float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
                         if(distance < nnParams.node_out[7]){
                             nnParams.node_out[7] = distance;
+                            nnParams.node_out[15] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
                         }
                     }
                 }
@@ -465,123 +480,129 @@ float activationFunction(float x) {
 
 /* This function is used to turn the calcNN on and off. Only used if calcNN is defined as a periodic function */
 void runSurviellance(){
-    nnParams.surveillanceOn = TRUE;
+    if(nnParams.surveillanceOn == TRUE) {
+        nnParams.surveillanceOn = FALSE;
+    } else {
+        nnParams.surveillanceOn = TRUE;
+    }
 }
 
 /** This function calculates the outputs of the NN */
 void calcNN() {
-    uint8_t recurrentNN = 0; // Boolean showing whether the NN is a recurrent network or not
-    nnParams.currentTime = get_sys_time_msec();
+    if (nnParams.surveillanceOn == TRUE) {
+        uint8_t recurrentNN = 0; // Boolean showing whether the NN is a recurrent network or not
+        nnParams.currentTime = get_sys_time_msec();
 
-    // Reset the node_out to zero for the new calculation
-    for (uint8_t nodeNum = MS_NUM_INPUTS; nodeNum < MS_NUM_NODES; nodeNum++){
-        nnParams.node_out[nodeNum] = 0;
-    }
-
-    /* Determine the inputs to the NN */
-    calcInputs();
-
-    //Calculate the contributions of the initial connections
-    float outNodeInput1;
-    float outNodeInput2;
-
-    for(uint8_t numOutputs = 0; numOutputs < MS_NUM_OUTPUTS; numOutputs++){
-        for (uint8_t numIn = 0; numIn < MS_NUM_INPUTS; numIn++){
-            nnParams.node_out[nnParams.outputIndex[numOutputs]] = nnParams.node_out[nnParams.outputIndex[numOutputs]] + nnParams.connectionsInit[numIn+MS_NUM_INPUTS*numOutputs]*nnParams.node_out[numIn];
+        // Reset the node_out to zero for the new calculation
+        for (uint8_t nodeNum = MS_NUM_INPUTS; nodeNum < MS_NUM_NODES; nodeNum++){
+            nnParams.node_out[nodeNum] = 0;
         }
-    }
-    outNodeInput1 = nnParams.node_out[nnParams.outputIndex[0]];
-    outNodeInput2 = nnParams.node_out[nnParams.outputIndex[1]];
 
-    // Calculate the contributions of the added connections and Nodes
-    for (uint8_t nodeNum = MS_NUM_INPUTS; nodeNum < MS_NUM_NODES; nodeNum++){
-        for (uint8_t connectNum = 0; connectNum < (MS_NUM_CONNECT-2*MS_NUM_INPUTS); connectNum++ ) {
-            if(nnParams.connectTo[connectNum] == nnParams.node_ID[nodeNum]) {
-                float inValue = 0;
-                for(uint8_t i = 0; i < MS_NUM_NODES; i++){
-                    if(nnParams.connectFrom[connectNum] == nnParams.node_ID[i]) {
-                        inValue = nnParams.node_out[i];
-                    }
-                }
-                nnParams.node_out[nodeNum] = nnParams.node_out[nodeNum] + nnParams.connectWeight[connectNum]*inValue;
+        /* Determine the inputs to the NN */
+        calcInputs();
+
+        //Calculate the contributions of the initial connections
+        float outNodeInput1;
+        float outNodeInput2;
+
+        for(uint8_t numOutputs = 0; numOutputs < MS_NUM_OUTPUTS; numOutputs++){
+            for (uint8_t numIn = 0; numIn < MS_NUM_INPUTS; numIn++){
+                nnParams.node_out[nnParams.outputIndex[numOutputs]] = nnParams.node_out[nnParams.outputIndex[numOutputs]] + nnParams.connectionsInit[numIn+MS_NUM_INPUTS*numOutputs]*nnParams.node_out[numIn];
             }
         }
-        nnParams.node_out[nodeNum] = activationFunction(nnParams.node_out[nodeNum]);
-    }
+        outNodeInput1 = nnParams.node_out[nnParams.outputIndex[0]];
+        outNodeInput2 = nnParams.node_out[nnParams.outputIndex[1]];
 
-    //Case when there are recurrent connections:
-    if(recurrentNN == 1) {
-        float no_change_threshold=1e-3;
-        uint8_t no_change_count = 0;
-        uint8_t index_loop = 0;         //-- Tracks the number of times the loop is run
-        float inVal;
-
-        while((no_change_count < MS_NUM_NODES) && index_loop < 3*MS_NUM_CONNECT){
-            no_change_count = MS_NUM_INPUTS;
-
-            // Calculate the contributions of the added connections and Nodes
-            for (uint8_t nodeNum = MS_NUM_INPUTS; nodeNum < MS_NUM_NODES; nodeNum++){
-                inVal = 0;
-                for (uint8_t connectNum = 0; connectNum < (MS_NUM_CONNECT-2*MS_NUM_INPUTS); connectNum++) {
-                    if(nnParams.connectTo[connectNum] == nnParams.node_ID[nodeNum]) {
-                        float inValueTemp = 0;
-                        for(uint8_t i = 0; i < MS_NUM_NODES; i++){
-                            if(nnParams.connectFrom[connectNum] == nnParams.node_ID[i]) {
-                                inValueTemp = nnParams.node_out[i];
-                            }
+        // Calculate the contributions of the added connections and Nodes
+        for (uint8_t nodeNum = MS_NUM_INPUTS; nodeNum < MS_NUM_NODES; nodeNum++){
+            for (uint8_t connectNum = 0; connectNum < (MS_NUM_CONNECT-2*MS_NUM_INPUTS); connectNum++ ) {
+                if(nnParams.connectTo[connectNum] == nnParams.node_ID[nodeNum]) {
+                    float inValue = 0;
+                    for(uint8_t i = 0; i < MS_NUM_NODES; i++){
+                        if(nnParams.connectFrom[connectNum] == nnParams.node_ID[i]) {
+                            inValue = nnParams.node_out[i];
                         }
-                        inVal = inVal + nnParams.connectWeight[connectNum]*inValueTemp;
                     }
+                    nnParams.node_out[nodeNum] = nnParams.node_out[nodeNum] + nnParams.connectWeight[connectNum]*inValue;
                 }
-                //Add contribution of the original connections to the output node. Hard coded to two outputs
-                if (nnParams.node_ID[nodeNum] == 19) {
-                    inVal = inVal + outNodeInput1;
-                }
-                if (nnParams.node_ID[nodeNum] == 20) {
-                    inVal = inVal + outNodeInput2;
-                }
-                //Compare new node output with old output
-                inVal = activationFunction(inVal);
-                if ((inVal-nnParams.node_out[nodeNum])*(inVal-nnParams.node_out[nodeNum]) < no_change_threshold) {
-                    no_change_count = no_change_count + 1;
-                }
-                nnParams.node_out[nodeNum] = inVal;
             }
-            index_loop++;
+            nnParams.node_out[nodeNum] = activationFunction(nnParams.node_out[nodeNum]);
         }
+
+        //Case when there are recurrent connections:
+        if(recurrentNN == 1) {
+            float no_change_threshold=1e-3;
+            uint8_t no_change_count = 0;
+            uint8_t index_loop = 0;         //-- Tracks the number of times the loop is run
+            float inVal;
+
+            while((no_change_count < MS_NUM_NODES) && index_loop < 3*MS_NUM_CONNECT){
+                no_change_count = MS_NUM_INPUTS;
+
+                // Calculate the contributions of the added connections and Nodes
+                for (uint8_t nodeNum = MS_NUM_INPUTS; nodeNum < MS_NUM_NODES; nodeNum++){
+                    inVal = 0;
+                    for (uint8_t connectNum = 0; connectNum < (MS_NUM_CONNECT-2*MS_NUM_INPUTS); connectNum++) {
+                        if(nnParams.connectTo[connectNum] == nnParams.node_ID[nodeNum]) {
+                            float inValueTemp = 0;
+                            for(uint8_t i = 0; i < MS_NUM_NODES; i++){
+                                if(nnParams.connectFrom[connectNum] == nnParams.node_ID[i]) {
+                                    inValueTemp = nnParams.node_out[i];
+                                }
+                            }
+                            inVal = inVal + nnParams.connectWeight[connectNum]*inValueTemp;
+                        }
+                    }
+                    //Add contribution of the original connections to the output node. Hard coded to two outputs
+                    if (nnParams.node_ID[nodeNum] == 19) {
+                        inVal = inVal + outNodeInput1;
+                    }
+                    if (nnParams.node_ID[nodeNum] == 20) {
+                        inVal = inVal + outNodeInput2;
+                    }
+                    //Compare new node output with old output
+                    inVal = activationFunction(inVal);
+                    if ((inVal-nnParams.node_out[nodeNum])*(inVal-nnParams.node_out[nodeNum]) < no_change_threshold) {
+                        no_change_count = no_change_count + 1;
+                    }
+                    nnParams.node_out[nodeNum] = inVal;
+                }
+                index_loop++;
+            }
+        }
+
+        //Return the output values:
+        float outputs[MS_NUM_OUTPUTS];
+        for(uint8_t numOutputs = 0; numOutputs < MS_NUM_OUTPUTS; numOutputs++){
+            outputs[numOutputs] = nnParams.node_out[nnParams.outputIndex[numOutputs]];
+        }
+        
+        /* Converting the NN outputs to velocities */
+        float theta;
+        if (outputs[0] != 0) {
+            theta = atanf(fabs(outputs[1]/outputs[0]));
+        } else {
+        	theta = PI/2;
+        }
+        
+        outputs[0] = outputs[0]*MS_MAX_VEL*cosf(theta);
+        outputs[1] = outputs[1]*MS_MAX_VEL*sinf(theta);
+
+
+        // THIS IS FOR GUIDED MODE
+        
+        // guidance_h_set_guided_vel(outputs[0],outputs[1]); 
+        // guidance_h_set_guided_vel(outputs[1],outputs[0]); //This is for optitrack, x and y swapped around!!!
+        guidance_h_set_guided_body_vel(outputs[1],outputs[0]);
+
+        /* Update the commanded speed for the Kalman filter */
+        float u_command[2] = {outputs[0],outputs[1]};
+        commandSpeed(u_command);
+
+        //nnParams.currentTime = get_sys_time_usec()-nnParams.currentTime;
+        printNode(); //This is for debugging 
+        // return 0;
     }
-
-    //Return the output values:
-    float outputs[MS_NUM_OUTPUTS];
-    for(uint8_t numOutputs = 0; numOutputs < MS_NUM_OUTPUTS; numOutputs++){
-        outputs[numOutputs] = nnParams.node_out[nnParams.outputIndex[numOutputs]];
-    }
-    
-    /* Converting the NN outputs to velocities */
-    float theta;
-    if (outputs[0] != 0) {
-        theta = atanf(fabs(outputs[1]/outputs[0]));
-    } else {
-    	theta = PI/2;
-    }
-    
-    outputs[0] = outputs[0]*MS_MAX_VEL*cosf(theta);
-    outputs[1] = outputs[1]*MS_MAX_VEL*sinf(theta);
-
-
-    // THIS IS FOR GUIDED MODE
-    
-    // guidance_h_set_guided_vel(outputs[0],outputs[1]); 
-    // guidance_h_set_guided_vel(outputs[1],outputs[0]); //This is for optitrack, x and y swapped around!!!
-    guidance_h_set_guided_body_vel(outputs[1],outputs[0]);
-
-    /* Update the commanded speed for the Kalman filter */
-    float u_command[2] = {outputs[0],outputs[1]};
-    commandSpeed(u_command);
-
-    nnParams.currentTime = get_sys_time_msec()-nnParams.currentTime;
-    printNode(); //This is for debugging 
-    // return 0;
 }
 
 void ageMS(void){
@@ -705,6 +726,7 @@ void neural_network_init(void) {
     nnParams.surveillanceOn = FALSE;
     nnParams.land = FALSE;
     nnParams.depotFree = TRUE;
+    nnParams.avoid = FALSE;
 
 /* _____________________________________________ NN for final data___________________________________________________ */
     /* Initialise the NN structure: Test 1 NN_8x8_ 
@@ -1454,44 +1476,6 @@ void neural_network_init(void) {
 
 }
 
-bool testDistance(){
-    /* Conversion between coordinate systems */
-    // float a = 0.827559;
-    // float b = 0.5613786;
-    // float c = -3.903735;
-    // float d = 1.0823;
-
-    struct EnuCoor_f *pos = stateGetPositionEnu_f();
-    // float tempX=(*pos).x;
-    // float tempY=(*pos).y;
-    // (*pos).x = a*tempX+b*tempY+c;
-    // (*pos).y = -b*tempX+a*tempY+d;
-
-    bool output = 0;
-
-    for(uint8_t i=0;i<MS_SWARM_SIZE;i++){
-        if(i != MS_CURRENT_ID){
-            float dist = ((*pos).x-msParams.uavs[i].x)*((*pos).x-msParams.uavs[i].x)+((*pos).y-msParams.uavs[i].y)*((*pos).y-msParams.uavs[i].y);
-            if (dist <= 1) {
-                output = 1;
-            }
-        }
-    }
-
-    return output;
-}
-
-bool outArea(){
-    bool output = 0;
-
-    struct EnuCoor_f *pos = stateGetPositionEnu_f();
-    if ((*pos).x < 0 || (*pos).y < 0 || (*pos).y > MS_BREDTH || (*pos).x > MS_LENGTH) {
-        output = 1;
-    }
-
-    return output;
-}
-
 bool printMS(){
     for (uint8_t i = 0; i < 14; i++) {
         printf("\n%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",msParams.MS[i][0],msParams.MS[i][1],msParams.MS[i][2],msParams.MS[i][3],msParams.MS[i][4],msParams.MS[i][5],msParams.MS[i][6],msParams.MS[i][7],msParams.MS[i][8],msParams.MS[i][9],msParams.MS[i][10],msParams.MS[i][11],msParams.MS[i][12],msParams.MS[i][13]);
@@ -1517,12 +1501,12 @@ void printNode(){
     // float printY = -b*tempX+a*tempY+d;
 
     // printf("\n%f,%f,%f,%f,%f,%f",printX,printY,(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y);
-    printf("\n%f,%f,%f,%f,%i",(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y,nnParams.currentTime);
+    printf("\n%f,%f,%f,%f,%f,%f",(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y,msParams.uavs[2].x,msParams.uavs[2].y);
 
-    for (uint8_t i =0; i < 18;i++){
-        printf(",%f",nnParams.node_out[i]);
-    }
-    printf(",%f,%f",nnParams.node_out[nnParams.outputIndex[0]],nnParams.node_out[nnParams.outputIndex[1]]);
+    // for (uint8_t i =0; i < 18;i++){
+    //     printf(",%f",nnParams.node_out[i]);
+    // }
+    // printf(",%f,%f",nnParams.node_out[nnParams.outputIndex[0]],nnParams.node_out[nnParams.outputIndex[1]]);
 }
 
 /*void neural_network_periodic(void) {
@@ -1532,7 +1516,7 @@ void printNode(){
 /* Implements the Homing behaviour*/
 void homing(float xPos, float yPos){
     float dist = sqrtf((msParams.uavs[MS_CURRENT_ID].x-xPos)*(msParams.uavs[MS_CURRENT_ID].x-xPos)+(msParams.uavs[MS_CURRENT_ID].y-yPos)*(msParams.uavs[MS_CURRENT_ID].y-yPos));
-    float theta
+    float theta;
     float out[2];
     if (xPos > msParams.uavs[MS_CURRENT_ID].x) {
         if (yPos > msParams.uavs[MS_CURRENT_ID].y) {
@@ -1543,7 +1527,7 @@ void homing(float xPos, float yPos){
         }
         
     } else {
-        if (depot.posY > agent.posY) {
+        if (MS_DEPOT_Y > msParams.uavs[MS_CURRENT_ID].y) {
             theta = 1.5*PI+fabs(atanf((yPos-msParams.uavs[MS_CURRENT_ID].y)/(xPos-msParams.uavs[MS_CURRENT_ID].x)));
         }
         else {
@@ -1552,8 +1536,8 @@ void homing(float xPos, float yPos){
     } 
 
     if (dist > (MS_MAX_VEL*MS_TIME_STEP)) {
-        out[0] = MS_MAX_VEL*sinf(theta);   % x vel
-        out[1] = MS_MAX_VEL*cosf(theta);   % Y vel
+        out[0] = MS_MAX_VEL*sinf(theta);   // x vel
+        out[1] = MS_MAX_VEL*cosf(theta);   // Y vel
     } else {
         out[0] = dist*sinf(theta)/MS_TIME_STEP;
         out[1] = dist*cosf(theta)/MS_TIME_STEP;
@@ -1568,83 +1552,136 @@ void homing(float xPos, float yPos){
 
 /* Implements a basic avoidance stratergy. Right turn if UAVs become too close */
 void avoid() {
-    float theta = 0.25*PI; // This is the turn angle that will be implemented. In this case, 45 deg right turn.
-    float velocity[2];
 
-     
+    float angle = PI/4; //This is the angle for the avoidance turn
+    float uk[2];
+    float out [2];
+    getCommandSpeed(uk);
+    float theta;    //Flight direction
+    if (nnParams.avoid == TRUE) {
+        out[0] = uk[0];
+        out[1] = uk[1];
+    } else {
+        //Determine current flight angle
+        if (uk[0] != 0) {
+            theta = atanf(uk[1]/uk[0]);
+        }  else {
+            theta = 0;
+        }
+
+        if (uk[0] >= 0) {
+            theta = theta - angle;
+            if (theta < - PI/2) {
+                theta = PI+theta;
+                out[0] = cosf(theta);
+                out[1] = sinf(theta);
+            } else {
+                out[0] = -cosf(theta);
+                out[1] = -sinf(theta);
+            }
+        } else {
+            theta = theta - angle;
+            if (theta < -PI/2 ) {
+                theta = PI+theta;
+                out[0] = -cosf(theta);
+                out[1] = -sinf(theta);
+            } else {
+                out[0] = cosf(theta);
+                out[1] = sinf(theta);
+            }
+        }
+        nnParams.avoid = 1;        
+    }
+
+    /* Set the comaanded speed */
+    guidance_h_set_guided_body_vel(out[1],out[0]);
+
+    /* Update the commanded speed for the Kalman filter */
+    commandSpeed(out);   
 }
 
-/*  */
+/* Returns the status of the land flag to the flight plan */
+bool landNow() {
+    return nnParams.land;
+}
+
+void setTakeOffFlag_NN() {
+    nnParams.land = FALSE;
+}
 
 /* This implements the refuelling Behaviour tree */
 void behaviourTree(){
-    /* Conversion between coordinate systems */
-    float a = 0.827559;
-    float b = 0.5613786;
-    float c = -3.903735;
-    float d = 1.0823;
+    if (nnParams.surveillanceOn == TRUE) {
+        /* Conversion between coordinate systems */
+        float a = 0.827559;
+        float b = 0.5613786;
+        float c = -3.903735;
+        float d = 1.0823;
 
-    for(uint8_t i=0;i<MS_SWARM_SIZE;i++){
-        float temp[2];
-        getPos_UWB((i+2),temp);             //!!!!!!!!!!!!!!!! MAGIC NUMBER: BEWARE!!!!!!
-        msParams.uavs[i].x = temp[0];
-        msParams.uavs[i].y = temp[1];
+        for(uint8_t i=0;i<MS_SWARM_SIZE;i++){
+            float temp[2];
+            getPos_UWB((i+2),temp);             //!!!!!!!!!!!!!!!! MAGIC NUMBER: BEWARE!!!!!!
+            msParams.uavs[i].x = temp[0];
+            msParams.uavs[i].y = temp[1];
 
-        msParams.uavs[i].x = a*temp[0]+b*temp[1]+c;
-        msParams.uavs[i].y = -b*temp[0]+a*temp[1]+d;
-    }
-    struct EnuCoor_f *pos_BT = stateGetPositionEnu_f();
-    float tempX=(*pos_BT).x;
-    float tempY=(*pos_BT).y;
-    (*pos_BT).x = a*tempX+b*tempY+c;
-    (*pos_BT).y = -b*tempX+a*tempY+d;
-    msParams.uavs[MS_CURRENT_ID].x = (*pos_BT).x;
-    msParams.uavs[MS_CURRENT_ID].y = (*pos_BT).y;
+            msParams.uavs[i].x = a*temp[0]+b*temp[1]+c;
+            msParams.uavs[i].y = -b*temp[0]+a*temp[1]+d;
+        }
+        struct EnuCoor_f *pos_BT = stateGetPositionEnu_f();
+        float tempX=(*pos_BT).x;
+        float tempY=(*pos_BT).y;
+        (*pos_BT).x = a*tempX+b*tempY+c;
+        (*pos_BT).y = -b*tempX+a*tempY+d;
+        msParams.uavs[MS_CURRENT_ID].x = (*pos_BT).x;
+        msParams.uavs[MS_CURRENT_ID].y = (*pos_BT).y;
 
-    /* The BT: Assumes that the charging depot is inside the MS */
-    if ((*pos_BT).x <= MS_LENGTH && (*pos_BT).x >= 0 && (*pos_BT).x <= MS_BREDTH && (*pos_BT).y >= 0) {
-        uint8_t currentCell_x = (uint8_t) ((*pos_BT).x/MS_GRID_RES);
-        uint8_t currentCell_y = (uint8_t) ((*pos_BT).y/MS_GRID_RES);
-        float dist = 5;
+        /* The BT: Assumes that the charging depot is inside the MS */
+        if ((*pos_BT).x <= MS_LENGTH && (*pos_BT).x >= 0 && (*pos_BT).x <= MS_BREDTH && (*pos_BT).y >= 0) {
+            // uint8_t currentCell_x = (uint8_t) ((*pos_BT).x/MS_GRID_RES);
+            // uint8_t currentCell_y = (uint8_t) ((*pos_BT).y/MS_GRID_RES);
+            float dist = 5;
 
-        /* Find distance to nearst other UAV */
-        for(uint8_t i=0;MS_SWARM_SIZE;i++){
-            if (i != MS_CURRENT_ID) {
-                float tempDist = ((*pos_BT).x-msParams.uavs[i].x)*((*pos_BT).x-msParams.uavs[i].x)+((*pos_BT).y-msParams.uavs[i].y)*((*pos_BT).y-msParams.uavs[i].y);
-                if (tempDist < dist) {
-                    dist = tempDist;
+            /* Find distance to nearst other UAV */
+            for(uint8_t i=0;MS_SWARM_SIZE;i++){
+                if (i != MS_CURRENT_ID) {
+                    float tempDist = ((*pos_BT).x-msParams.uavs[i].x)*((*pos_BT).x-msParams.uavs[i].x)+((*pos_BT).y-msParams.uavs[i].y)*((*pos_BT).y-msParams.uavs[i].y);
+                    if (tempDist < dist) {
+                        dist = tempDist;
+                    }
                 }
             }
-        }
-        if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {
-            avoid();
-        } else if(msParams.MS[currentCell_y][currentCell_x] == 0){
-            homing(5.0,5.0);
-        } else if (electrical.bat_low) {
-            if (nnParams.depotFree == FALSE) {
-                /* If Depot is free and fuel is low, go and charge */
-                dist = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
-                if (dist <= 0.01) {
-                    nnParams.land = TRUE;
-                }else {
-                    homing(MS_DEPOT_X,MS_DEPOT_Y);
+            if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {
+                avoid();
+            } else if (dist > MS_DIST_THRESH_2*MS_DIST_THRESH_2 && nnParams.avoid == 1) {   
+                nnParams.avoid = 0;
+                calcNN();
+            } else if (electrical.bat_low) {
+                if (nnParams.depotFree == FALSE) {
+                    /* If Depot is free and fuel is low, go and charge */
+                    dist = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
+                    if (dist <= 0.01) {
+                        nnParams.land = TRUE;
+                    }else {
+                        homing(MS_DEPOT_X,MS_DEPOT_Y);
+                    }
+                }else if (electrical.bat_critical){
+                    /* If fuel very low, return to depot */
+                    dist = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
+                    if (dist <= 0.01) {
+                        nnParams.land = TRUE;
+                    }else {
+                        homing(MS_DEPOT_X,MS_DEPOT_Y);
+                    }
                 }
-            }else if (electrical.bat_critical){
-                /* If fuel very low, return to depot */
-                dist = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
-                if (dist <= 0.01) {
-                    nnParams.land = TRUE;
-                }else {
-                    homing(MS_DEPOT_X,MS_DEPOT_Y);
-                }
+            } else {
+                /* Default case is surveillance */
+                calcNN();
             }
-        } else {
-            /* Default case is surveillance */
-            calcNN();
         }
-    }
-    else{
-        //Return to the centre of the MS 
-        homing(5.0,5.0);
+        else{
+            //Return to the centre of the MS 
+            homing(MS_DEPOT_X,MS_DEPOT_Y);
+            nnParams.avoid = FALSE;
+        }
     }
 }

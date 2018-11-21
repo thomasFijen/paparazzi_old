@@ -33,21 +33,22 @@
 
 #include "std.h"
 
+
 float activationFunction(float x);
 void ageMS(void);
 void homing(float xPos, float yPos);
 void avoid(void); 
 void behaviourTree(void);
+
 extern void runSurviellance(void); //Use this if calcNN is set as a periodic function. 
+extern bool landNow(void); // Returns the status of the Land flag
 extern bool printMS(void);
 extern void printNode(void);
-extern bool outArea(void);
-extern bool testDistance(void);
- extern void calcInputs(void); 
- // extern bool calcNN(uint8_t wp_id); 
- extern void calcNN(void); 
- extern void neural_network_init(void);
-// extern void neural_network_periodic(void);
+extern void setTakeOffFlag_NN(void);
+
+extern void calcInputs(void); 
+extern void calcNN(void); 
+extern void neural_network_init(void);
 
 #endif
 

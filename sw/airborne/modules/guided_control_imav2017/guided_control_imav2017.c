@@ -26,8 +26,9 @@
  */
 
 #include <math.h>
-// #include "modules/relativelocalizationfilter/relativelocalizationfilter.h"
+
 #include "modules/decawave/uwb_localisation_and_comms.h"
+#include "modules/neural_network/neural_network.h"
 #include "math/pprz_algebra_int.h"
 #include "navigation.h"
 #include "autopilot.h"
@@ -38,6 +39,7 @@
 #include "guided_control_imav2017.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "mcu_periph/sys_time_arch.h"
 
 #define PI 3.14159265
 
@@ -97,11 +99,13 @@ static float counter = 0.0;
 bool hoverGuided(float cmd_height){
   float u_command[2] = {0,0};
   commandSpeed(u_command);
+  setTakeOffFlag_NN();
 
 	bool temp = true;
 	temp &= guidance_v_set_guided_z(-cmd_height);
 	temp &= guidance_h_set_guided_vel(0.0,0.0);
-	temp &= guidance_h_set_guided_heading(-0.576); //0.0 not reccommended if without a good heading estimate
+  temp &= guidance_h_set_guided_heading(0.0);
+	// temp &= guidance_h_set_guided_heading(-0.576); //0.0 not reccommended if without a good heading estimate
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 }
 
@@ -111,17 +115,17 @@ bool circle(){
           /* Fly in a square pattern */
         counter = counter + 1;
         if(counter <= 60){
-            velX = 0.5;
+            velX = 0.4;
             velY = 0;
         }else if (counter <= 120){
             velX = 0.0;
-            velY = -0.5;
+            velY = 0.4;
         }else if (counter <=180){
-            velX = -0.5;
+            velX = -0.4;
             velY = 0.0;
         }else if(counter <=240){
             velX = 0.0;
-            velY = 0.5;
+            velY = -0.4;
         }else{
             counter = 0.0;
         }
@@ -134,8 +138,10 @@ bool circle(){
   // } else{
   //   counter = 0.0;
   // }
- // struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
- // printf("%f,%f,%f,%f \n",(*pos2).x,(*pos2).y,velX ,velY); //for identification
+
+  //uint32_t currentTime = get_sys_time_msec();    
+  //struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+  //printf("%f,%f,%f,%f,%i \n",(*pos2).x,(*pos2).y,velX ,velY,currentTime); //for identification
 
   // bool ret = guidance_h_set_guided_vel(velX,velY);
   bool ret = guidance_h_set_guided_body_vel(velY,velX);

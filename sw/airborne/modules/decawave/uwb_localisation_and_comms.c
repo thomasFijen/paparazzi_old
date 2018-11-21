@@ -73,7 +73,7 @@
 static bool _inProgress = false;
 static uint8_t _varByte = 0;
 static float uk[2] = {0,0};
-static float X_old_kal[6] = {0,0,0,0,0,0};
+static float X_old_kal[6] = {0,0,0,0,2.0,4.0};
 static float X_new_kal[6] = {0,0,0,0,0,0};
 
 #define UWB_SERIAL_PORT (&((UWB_DW1000_DEV).device))
@@ -160,7 +160,7 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
     for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
       if (dw->anchors[i].id == id) {
         float norm = float_from_buf(dw->buf+2);
-        if (norm < 20 || norm > -20) { //Outlier Rejection. Ignore ranges that change by more than 2m
+        if (norm < 20 && norm > -20) { //Outlier Rejection. Ignore ranges that change by more than 2m
           dw->anchors[i].distance = float_from_buf(dw->buf+2);
           dw->anchors[i].time = get_sys_time_float();
           dw->updated = true;
@@ -249,7 +249,7 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   uint32_t now_ts = get_sys_time_usec();
   
   // -- Call the update function from the UWB GPS code
-  //update_uwb(now_ts, &(dw->gps_dw1000));
+  update_uwb(now_ts, &(dw->gps_dw1000));
 }
 
 /// init arrays from airframe file
@@ -292,7 +292,7 @@ void local_and_comms_init(void) {
   dw1000.pos.z = 0.f;
   dw1000.updated = false;
   for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
-    dw1000.anchors[i].distance = 0.f;
+    dw1000.anchors[i].distance = 3.f;
     dw1000.anchors[i].time = 0.f;
     dw1000.anchors[i].id = ids[i];
     dw1000.anchors[i].pos.x = pos_x[i];
@@ -332,6 +332,11 @@ void commandSpeed(float u_command[2]){
   uk[0] = u_command[0];
   uk[1] = u_command[1];
 }
+/* Returns the commanded speed */
+void getCommandSpeed(float u_command[2]){
+  u_command[0] = uk[0];
+  u_command[1] = uk[1];
+}
 
 /*
 * This function periodically calculates the current position based on the ranges to the anchors, and updates the GPS coordinates. 
@@ -345,10 +350,19 @@ void local_and_comms_periodic(void) {
     temp = nonLinLS_compute(dw1000.anchors, &dw1000.raw_pos, &dw1000.pos);  //This is for NLLS multilateration
     
     /* Apply the Kalman filter on the estimated position */
-    // kalman_filter(X_new_kal, X_old_kal, uk, dw1000.pos.x, dw1000.pos.y);
-    float x = 1;
-    float y = 1;
-    kalman_filter(X_new_kal, X_old_kal, uk, x, y);
+    /* Conversion between coordinate systems */
+    float a = 0.827559;
+    float b = 0.5613786;
+    float c = -3.903735;
+    float d = 1.0823;
+
+    struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+    float tempX=(*pos2).x;
+    float tempY=(*pos2).y;
+    (*pos2).x = a*tempX+b*tempY+c;
+    (*pos2).y = -b*tempX+a*tempY+d;
+    kalman_filter(X_new_kal, X_old_kal, uk, dw1000.pos.x, dw1000.pos.y);
+    // kalman_filter(X_new_kal, X_old_kal, uk, (*pos2).x, (*pos2).y);
     
     X_old_kal[0] = X_new_kal[0]; 
     X_old_kal[1] = X_new_kal[1];
@@ -357,6 +371,13 @@ void local_and_comms_periodic(void) {
     X_old_kal[4] = X_new_kal[4];
     X_old_kal[5] = X_new_kal[5];
     
+    uint32_t currentTime = get_sys_time_msec();  
+    // struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+    // printf("%f,%f,",(*pos2).x,(*pos2).y);
+    printf("%f,%f,%f,%f,",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance); //for identification  
+    printf("%f,%f,%f,%f,%f,%f,%i \n",dw1000.pos.x,dw1000.pos.y,X_old_kal[4],X_old_kal[5],uk[0] ,uk[1],currentTime); //for identification
+    
+
     dw1000.pos.x = X_old_kal[4];
     dw1000.pos.y = X_old_kal[5];
   
@@ -373,13 +394,13 @@ void local_and_comms_periodic(void) {
   //}
 
   /* Send position to Arduino over the UART */
-  struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+  //struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
   sendFloat(UWB_SERIAL_COMM_X, (*pos2).x);
   sendFloat(UWB_SERIAL_COMM_Y, (*pos2).y);
 }
 
 void local_and_comms_report(void) {
-  struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+  //struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
 
   // float a = 0.827559;
   // float b = 0.5613786;

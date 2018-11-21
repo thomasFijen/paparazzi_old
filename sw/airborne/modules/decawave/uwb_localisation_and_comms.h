@@ -44,6 +44,7 @@ extern void local_and_comms_report(void);
 extern void local_and_comms_event(void);
 
  extern void commandSpeed(float u_command[2]);
+ extern void getCommandSpeed(float u_command[2]);
  extern void getRanges(float ranges[4]);
  extern void getPos_UWB(uint8_t index, float positions[2]);
 
