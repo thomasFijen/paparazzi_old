@@ -45,6 +45,7 @@ extern bool landNow(void); // Returns the status of the Land flag
 extern bool printMS(void);
 extern void printNode(void);
 extern void setTakeOffFlag_NN(void);
+extern void getDepotFlag(float data[2]);
 
 extern void calcInputs(void); 
 extern void calcNN(void); 

@@ -35,6 +35,7 @@ struct nodeState {
   uint8_t nodeAddress;
   float x;
   float y;
+  float d;
   /*bool state_updated[UWB_SERIAL_COMM_NODE_STATE_SIZE];*/
 };
 

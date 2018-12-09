@@ -87,16 +87,11 @@
       <call_once fun="runSurviellance()"/>
       <while cond="TRUE">
       </while>
-      <!-- <while cond="TRUE">
-        <call_once fun="calcNN()"/>
-        <while cond="0.25 > stage_time"/>
-      </while> -->
     </block>
     <block name="circle">
-      <for var="i" from="0" to="80">
-        <call fun="circle()"/>
-        <while cond="0.25 > stage_time"/>
-      </for>
+      <call_once fun="startCircle()"/>
+      <while cond="TRUE">
+      </while>
     </block>
     <block name="Land" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="runSurviellance()"/>

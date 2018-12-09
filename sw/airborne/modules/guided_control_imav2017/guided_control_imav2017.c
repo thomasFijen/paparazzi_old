@@ -44,6 +44,9 @@
 #define PI 3.14159265
 
 static float counter = 0.0;
+static bool restPosRef = FALSE;
+static bool flyInCircle = FALSE;
+static float commandHeight;
 
 // // ABI messages
 // #include "subsystems/abi.h"
@@ -96,60 +99,96 @@ static float counter = 0.0;
 // }
 
 // First put both here.
+void printTakeoff() {
+  //printf("Take off \n");
+}
+
 bool hoverGuided(float cmd_height){
   float u_command[2] = {0,0};
   commandSpeed(u_command);
   setTakeOffFlag_NN();
+  commandHeight = cmd_height;
 
 	bool temp = true;
 	temp &= guidance_v_set_guided_z(-cmd_height);
 	temp &= guidance_h_set_guided_vel(0.0,0.0);
-  temp &= guidance_h_set_guided_heading(0.0);
-	// temp &= guidance_h_set_guided_heading(-0.576); //0.0 not reccommended if without a good heading estimate
+  // temp &= guidance_h_set_guided_heading(0.0);
+	temp &= guidance_h_set_guided_heading(-0.576); //0.0 not reccommended if without a good heading estimate
+
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 }
 
-bool circle(){
-  float velX = 0.0;
-  float velY = 0.0;
-          /* Fly in a square pattern */
-        counter = counter + 1;
-        if(counter <= 60){
-            velX = 0.4;
-            velY = 0;
-        }else if (counter <= 120){
-            velX = 0.0;
-            velY = 0.4;
-        }else if (counter <=180){
-            velX = -0.4;
-            velY = 0.0;
-        }else if(counter <=240){
-            velX = 0.0;
-            velY = -0.4;
-        }else{
-            counter = 0.0;
-        }
+/* This resets the referece to the current UWB position */
+void swithToUWB(){
+  //Set the GPS position to use UWB
+  use_UWB_position();
+  
+  /* Reset the current reference position x,y. Needed for UWB */
+  struct EnuCoor_f *pos2 = stateGetPositionNed_i();
+  struct Int32Vect2 posSettingRef;
+  struct Int32Vect2 speed;
+  struct Int32Vect2 accel;
+  VECT2_COPY(posSettingRef, *stateGetPositionNed_i());
+  speed.x=0;
+  speed.y=0;
+  accel.x=0;
+  accel.y=0;
+  gh_set_ref(posSettingRef, speed, accel);
+  restPosRef = TRUE;
+}
 
-  /* Fly in a Circle pattern */
-  // if(counter <= 360){
-  //   velX = 0.5*cosf(counter*PI/180.0);
-  //   velY = 0.5*sinf(counter*PI/180.0);
-  //   counter = counter + 1;
-  // } else{
-  //   counter = 0.0;
-  // }
+void startCircle() {
+  if (flyInCircle == TRUE) {
+    flyInCircle = FALSE;
+  } else {
+    flyInCircle = TRUE;
+  }
+}
 
-  //uint32_t currentTime = get_sys_time_msec();    
-  //struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
-  //printf("%f,%f,%f,%f,%i \n",(*pos2).x,(*pos2).y,velX ,velY,currentTime); //for identification
+void circle(){
+  if (flyInCircle == TRUE) {
+    float velX = 0.0;
+    float velY = 0.0;
 
-  // bool ret = guidance_h_set_guided_vel(velX,velY);
-  bool ret = guidance_h_set_guided_body_vel(velY,velX);
+    // /* Fly in a square pattern */
+    // counter = counter + 1;
+    // if(counter <= 30){
+    //     velX = 0.5;
+    //     velY = 0;
+    // }else if (counter <= 60){
+    //     velX = 0.0;
+    //     velY = 0.5;
+    // }else if (counter <=90){
+    //     velX = -0.5;
+    //     velY = 0.0;
+    // }else if(counter <=120){
+    //     velX = 0.0;
+    //     velY = -0.5;
+    // }else{
+    //     counter = 0.0;
+    // }
 
-  float u_command[2] = {velX,velY};
-  commandSpeed(u_command);
+    /* Fly in a Circle pattern */
+    if(counter <= 360){
+      velX = 0.3*cosf(counter*PI/90.0);
+      velY = 0.3*sinf(counter*PI/90.0);
+      counter = counter + 1;
+    } else{
+      counter = 0.0;
+    }
 
-  return ret;
+    // uint32_t currentTime = get_sys_time_msec();    
+    struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+    // printf("%f,%f,%f,%f,%i \n",(*pos2).x,(*pos2).y,velX ,velY,currentTime); //for identification
+
+    // bool ret = guidance_h_set_guided_vel(velX,velY);
+    bool ret = TRUE;
+    ret &= guidance_v_set_guided_z(-commandHeight);
+    ret = guidance_h_set_guided_body_vel(velY,velX);
+
+    float u_command[2] = {velX,velY};
+    commandSpeed(u_command);
+  }
 }
 
 // bool trackOther(float cmd_height){

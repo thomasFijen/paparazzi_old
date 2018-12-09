@@ -11,6 +11,7 @@
 	</header>
 	<!-- <init fun="guided_control_imav2017_init()" /> -->
 	<!-- <periodic fun="guided_control_imav2017_periodic()" freq="1" autorun="TRUE" /> -->
+	<periodic fun="circle()" freq="4" autorun="TRUE"/>
 	<makefile target="ap">
 		<file name="guided_control_imav2017.c" />
 	</makefile>

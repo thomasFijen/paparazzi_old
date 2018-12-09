@@ -29,9 +29,9 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>  <!-- Use this for the UWB -->
-     <!--  <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> --> <!--This is needed for the optitrack -->
-      <!-- <define name="AHRS_USE_GPS_HEADING" value="TRUE"/> --> <!-- Use this for the optitrack -->
+      <!-- <define name="AHRS_USE_GPS_HEADING" value="FALSE"/> -->  <!-- Use this for the UWB -->
+      <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> <!--This is needed for the optitrack -->
+      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/> <!-- Use this for the optitrack -->
     </module>
    <!-- <module name="uwb_dw1000_delft"> 
 		<configure name="UWB_DW1000_UART" value="UART2" />
@@ -46,7 +46,7 @@
     <module name="guided_control_imav2017"/>
 
     <module name="neural_network"/>
-    <module name="gps" type="uwb"/>   <!-- datalink uwb -->
+    <module name="gps" type="datalink"/>   <!-- datalink uwb -->
 
     <module name="ins" type="extended"/> <!-- hff_extended extended -->
      
@@ -253,17 +253,17 @@
       <define name="GRID_NUM_CELLS" value="80" type="uint8_t" />
       <define name="NUM_INPUTS" value="18" type="uint8_t" />
       <define name="NUM_OUTPUTS" value="2" type="uint8_t" />
-      <define name="SWARM_SIZE" value="3" type="uint8_t" />
+      <define name="SWARM_SIZE" value="2" type="uint8_t" />
       <define name="NUM_NODES" value="26" type="uint8_t" />
       <define name="NUM_CONNECT" value="55" type="uint8_t" />
       <define name="MAX_VEL" value="0.3" type="float" />
-      <define name="CURRENT_ID" value="2" type="uint8_t" />
+      <define name="CURRENT_ID" value="0" type="uint8_t" />
       <define name="SENSOR_RANGE" value="3.5" type="float" />
       <define name="FOOTPRINT" value="1.0" type="float" />
   </section>
 
 <!-- Multilateration with comms Optitrack positioning-->
-  <!-- <section name="DW1000" prefix="DW1000_">
+  <section name="DW1000" prefix="DW1000_">
     <define name="ANCHORS_IDS" value="1, 2, 3, 4" type="int[]"/>
     <define name="ANCHORS_POS_X" value="6.9, 9.1, 6.2, 0.4" type="float[]"/> 
     <define name="ANCHORS_POS_Y" value="1.9, 3.2, 11.2, 7.8" type="float[]"/>
@@ -272,12 +272,12 @@
     <define name="SCALE" value="1.0,1.0,1.0,1.0" type="float[]"/>
     <define name="INITIAL_HEADING" value="0.0"/>
     <define name="NB_ANCHORS" value="4"/>
-    <define name="SERIAL_COMM_NUM_TAGS" value="3"/>
-    <define name="TAG_IDS" value="2,3,4" type="int[]"/>
-  </section> -->
+    <define name="SERIAL_COMM_NUM_TAGS" value="2"/>
+    <define name="TAG_IDS" value="2,3" type="int[]"/>
+  </section>
 
   <!-- Multilateration with comms -->
-  <section name="DW1000" prefix="DW1000_">
+  <!-- <section name="DW1000" prefix="DW1000_">
     <define name="ANCHORS_IDS" value="1, 2, 3, 4" type="int[]"/>
     <define name="ANCHORS_POS_X" value="2.42, 4.82, 7.0, 0.0" type="float[]"/> 
     <define name="ANCHORS_POS_Y" value="0.0, 0.0, 9.0, 9.0" type="float[]"/>
@@ -288,7 +288,7 @@
     <define name="NB_ANCHORS" value="4"/>
     <define name="SERIAL_COMM_DIST_NUM_NODES" value="1"/>
     <define name="TAG_IDS" value="5" type="int[]"/>
-  </section>
+  </section> -->
 
   
   <!-- I added this for the UWB beacons, Trillateration -->

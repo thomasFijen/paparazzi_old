@@ -32,12 +32,15 @@
 // extern void guided_control_imav2017_periodic(void);
 
 extern bool hoverGuided(float cmd_height);
-extern bool circle(void);
+extern void startCircle(void); 
+extern void circle(void);
 // extern bool trackOther(float cmd_height);
 // extern bool trackRelPos(float cmd_height);
 // extern bool trackVelocity(float cmd_height);
 // extern bool setForwardVelocity(float velx, float cmd_height);
 // extern bool setForwardAndTrack(float velx, float cmd_height);
 extern bool goLand(void);
+extern void printTakeoff(void);
+extern void swithToUWB(void);
 
 #endif /* STEVEN_GUIDED_CTRL_H_ */

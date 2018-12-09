@@ -85,11 +85,11 @@
 #endif
 
 #ifndef MS_DEPOT_X
-#define MS_DEPOT_X 1.0
+#define MS_DEPOT_X 7.0
 #endif
 
 #ifndef MS_DEPOT_Y
-#define MS_DEPOT_Y 1.0
+#define MS_DEPOT_Y 0.5
 #endif
 
 #ifndef MS_NUM_INPUTS
@@ -114,6 +114,8 @@
 static struct MS_Struct msParams;
 static struct NN_struct nnParams;
 
+static uint8_t counterTemp = 0;
+
 /** Structure containing NN parameters */
 struct NN_struct {
     // At the moment the connections are input by hand here.
@@ -130,10 +132,12 @@ struct NN_struct {
     float node_out [MS_NUM_NODES];
 
     bool surveillanceOn;    //Flag indicating that the MAV can perform the surveillance task
-    bool depotFree;         //Flag indicating that the depot is unused
+    float depotNotFree;         //Flag indicating that the depot is unused
     bool land;              // Flag showing that the MAV must land
-    bool avoid;             // Avoid flag. Indicates the MAV is performing an avoidance move
+    uint8_t avoid;             // Avoid flag. Indicates the MAV is performing an avoidance move
     uint32_t currentTime;
+
+    float bt_State;
 };
 
 /** Mission Space Parameter structure */
@@ -169,8 +173,10 @@ void calcInputs(){
     (*pos).y = -b*tempX+a*tempY+d;
 
     for(uint8_t i=0;i<MS_SWARM_SIZE;i++){
-        float temp[2];
+        float temp[3];
         getPos_UWB((i+2),temp);             //!!!!!!!!!!!!!!!! MAGIC NUMBER: BEWARE!!!!!!
+        nnParams.depotNotFree = temp[2];
+
         msParams.uavs[i].x = temp[0];
         msParams.uavs[i].y = temp[1];
 
@@ -717,6 +723,10 @@ void neural_network_init(void) {
             }
         }
     }
+    // msParams.MS[2][12] = 0;
+    // msParams.MS[2][11] = 0;
+    // msParams.MS[3][11] = 0;
+    // msParams.MS[3][12] = 0;
 
     msParams.sensorRange = MS_SENSOR_RANGE;
     /* Starting positions of the Drones */
@@ -725,8 +735,9 @@ void neural_network_init(void) {
 
     nnParams.surveillanceOn = FALSE;
     nnParams.land = FALSE;
-    nnParams.depotFree = TRUE;
+    nnParams.depotNotFree = 0;
     nnParams.avoid = FALSE;
+    nnParams.bt_State = 6;
 
 /* _____________________________________________ NN for final data___________________________________________________ */
     /* Initialise the NN structure: Test 1 NN_8x8_ 
@@ -1487,21 +1498,26 @@ bool printMS(){
 void printNode(){
     // x1,y1,x2,y2,node1,node2,...,node18,outNode1,outNode2.
         /* Conversion between coordinate systems */
-    // float a = 0.827559;
-    // float b = 0.5613786;
-    // float c = -3.903735;
-    // float d = 1.0823;
+    float a = 0.827559;
+    float b = 0.5613786;
+    float c = -3.903735;
+    float d = 1.0823;
 
     struct EnuCoor_f *pos = stateGetPositionEnu_f();
-    // float tempX=(*pos).x;
-    // float tempY=(*pos).y;
-    // // (*pos).x = a*tempX+b*tempY+c;
-    // // (*pos).y = -b*tempX+a*tempY+d;
+    float tempX=(*pos).x;
+    float tempY=(*pos).y;
+    (*pos).x = a*tempX+b*tempY+c;
+    (*pos).y = -b*tempX+a*tempY+d;
     // float printX = a*tempX+b*tempY+c;;
     // float printY = -b*tempX+a*tempY+d;
 
-    // printf("\n%f,%f,%f,%f,%f,%f",printX,printY,(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y);
-    printf("\n%f,%f,%f,%f,%f,%f",(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y,msParams.uavs[2].x,msParams.uavs[2].y);
+    /* Print the flag states */
+    // printf("\n%f,%f,%f,%f,%f,%f,%i,%i",msParams.uavs[1].x,msParams.uavs[1].y,msParams.uavs[0].x,msParams.uavs[0].y,nnParams.depotNotFree,nnParams.bt_State,nnParams.land,nnParams.surveillanceOn);
+
+
+
+    printf("\n%f,%f,%f,%f,%f, %f",(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y,nnParams.depotNotFree,nnParams.bt_State);
+    // printf("\n%f,%f,%f,%f,%f,%f",(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y,msParams.uavs[2].x,msParams.uavs[2].y);
 
     // for (uint8_t i =0; i < 18;i++){
     //     printf(",%f",nnParams.node_out[i]);
@@ -1558,38 +1574,67 @@ void avoid() {
     float out [2];
     getCommandSpeed(uk);
     float theta;    //Flight direction
-    if (nnParams.avoid == TRUE) {
-        out[0] = uk[0];
-        out[1] = uk[1];
-    } else {
+
+    if (nnParams.avoid == 1) {
         //Determine current flight angle
         if (uk[0] != 0) {
             theta = atanf(uk[1]/uk[0]);
         }  else {
-            theta = 0;
+            if (uk[1] >= 0) {
+                theta = PI/2;
+            } else {
+                theta = -PI/2;
+            }  
         }
-
+        theta = theta - angle;
+        //Implements the avoidance 'turn'
         if (uk[0] >= 0) {
-            theta = theta - angle;
             if (theta < - PI/2) {
                 theta = PI+theta;
-                out[0] = cosf(theta);
-                out[1] = sinf(theta);
+                out[0] = -MS_MAX_VEL*cosf(theta);
+                out[1] = -MS_MAX_VEL*sinf(theta);
             } else {
-                out[0] = -cosf(theta);
-                out[1] = -sinf(theta);
+                out[0] = MS_MAX_VEL*cosf(theta);
+                out[1] = MS_MAX_VEL*sinf(theta);
             }
         } else {
-            theta = theta - angle;
             if (theta < -PI/2 ) {
                 theta = PI+theta;
-                out[0] = -cosf(theta);
-                out[1] = -sinf(theta);
+                out[0] = MS_MAX_VEL*cosf(theta);
+                out[1] = MS_MAX_VEL*sinf(theta);
             } else {
-                out[0] = cosf(theta);
-                out[1] = sinf(theta);
+                out[0] = -MS_MAX_VEL*cosf(theta);
+                out[1] = -MS_MAX_VEL*sinf(theta);
             }
         }
+        nnParams.avoid = 2;
+        
+    } else if (nnParams.avoid == 2) {
+        //Maintain the avoidance motion
+        out[0] = uk[0];
+        out[1] = uk[1];
+    }else {
+        //Determine current flight angle
+        if (uk[0] != 0) {
+            theta = atanf(uk[1]/uk[0]);
+        }  else {
+            if (uk[1] >= 0) {
+                theta = PI/2;
+            } else {
+                theta = -PI/2;
+            }  
+        }
+
+        //Reverse the flight path
+        if (uk[0] >= 0) {
+            out[0] = MS_MAX_VEL*cosf(theta);
+            out[1] = MS_MAX_VEL*sinf(theta);
+        } else {
+            out[0] = -MS_MAX_VEL*cosf(theta);
+            out[1] = -MS_MAX_VEL*sinf(theta);
+        }
+        out[0] = -out[0];
+        out[1] = -out[1];
         nnParams.avoid = 1;        
     }
 
@@ -1602,11 +1647,23 @@ void avoid() {
 
 /* Returns the status of the land flag to the flight plan */
 bool landNow() {
-    return nnParams.land;
+    if (nnParams.land == TRUE){
+        nnParams.land = FALSE;
+        return TRUE;
+    } else
+    {
+        return FALSE;
+    }
+    
 }
 
 void setTakeOffFlag_NN() {
     nnParams.land = FALSE;
+}
+
+void getDepotFlag(float data[2]){
+    data[0] = MS_CURRENT_ID+2;      //!!!!!!!!!!!!!!!! MAGIC NUMBER: BEWARE!!!!!!
+    data[1] = nnParams.depotNotFree;
 }
 
 /* This implements the refuelling Behaviour tree */
@@ -1618,15 +1675,30 @@ void behaviourTree(){
         float c = -3.903735;
         float d = 1.0823;
 
+        float tempFlag[MS_SWARM_SIZE];
         for(uint8_t i=0;i<MS_SWARM_SIZE;i++){
-            float temp[2];
+            float temp[3];
             getPos_UWB((i+2),temp);             //!!!!!!!!!!!!!!!! MAGIC NUMBER: BEWARE!!!!!!
+            tempFlag[i] = temp[2];
             msParams.uavs[i].x = temp[0];
             msParams.uavs[i].y = temp[1];
 
             msParams.uavs[i].x = a*temp[0]+b*temp[1]+c;
             msParams.uavs[i].y = -b*temp[0]+a*temp[1]+d;
         }
+        //Assigning the Depot free flag
+        nnParams.depotNotFree = 0;
+        for(uint8_t i=0;i<MS_SWARM_SIZE;i++){
+            if (i != MS_CURRENT_ID) {
+                if (tempFlag[i] == 1) {
+                    nnParams.depotNotFree = 1;
+                }
+            }
+        }
+        // if (nnParams.depotNotFree == 1 && nnParams.returnToDepot == 1) {
+        //     nnParams.returnToDepot = 0;
+        // }
+
         struct EnuCoor_f *pos_BT = stateGetPositionEnu_f();
         float tempX=(*pos_BT).x;
         float tempY=(*pos_BT).y;
@@ -1635,53 +1707,119 @@ void behaviourTree(){
         msParams.uavs[MS_CURRENT_ID].x = (*pos_BT).x;
         msParams.uavs[MS_CURRENT_ID].y = (*pos_BT).y;
 
-        /* The BT: Assumes that the charging depot is inside the MS */
-        if ((*pos_BT).x <= MS_LENGTH && (*pos_BT).x >= 0 && (*pos_BT).x <= MS_BREDTH && (*pos_BT).y >= 0) {
-            // uint8_t currentCell_x = (uint8_t) ((*pos_BT).x/MS_GRID_RES);
-            // uint8_t currentCell_y = (uint8_t) ((*pos_BT).y/MS_GRID_RES);
-            float dist = 5;
+        // nnParams.depotNotFree = 1;
 
-            /* Find distance to nearst other UAV */
-            for(uint8_t i=0;MS_SWARM_SIZE;i++){
-                if (i != MS_CURRENT_ID) {
-                    float tempDist = ((*pos_BT).x-msParams.uavs[i].x)*((*pos_BT).x-msParams.uavs[i].x)+((*pos_BT).y-msParams.uavs[i].y)*((*pos_BT).y-msParams.uavs[i].y);
-                    if (tempDist < dist) {
-                        dist = tempDist;
-                    }
-                }
-            }
-            if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {
-                avoid();
-            } else if (dist > MS_DIST_THRESH_2*MS_DIST_THRESH_2 && nnParams.avoid == 1) {   
-                nnParams.avoid = 0;
+        /* --- This was used to test the Homing and depot flag -- */
+        // float posTestX[3] = {1.0,3.5,6.0};
+        // float posTestY[3] = {5.0,5.0,1.0};
+
+        // float distDepot = ((*pos_BT).x-posTestX[counterTemp])*((*pos_BT).x-posTestX[counterTemp])+((*pos_BT).y-posTestY[counterTemp])*((*pos_BT).y-posTestY[counterTemp]);
+        // if(distDepot < 0.01){
+        //     counterTemp = counterTemp +1;
+        //     if (counterTemp == 3) {
+        //         counterTemp = 0;
+        //     }
+        //     if(nnParams.depotNotFree == 1){
+        //         nnParams.depotNotFree = 0;
+        //     }else{
+        //         nnParams.depotNotFree = 1;
+        //     }
+        // }
+
+        /* The BT: Assumes that the charging depot is inside the MS */
+        if ((*pos_BT).x <= MS_LENGTH && (*pos_BT).x >= 0 && (*pos_BT).y <= MS_BREDTH && (*pos_BT).y >= 0) {
+        //     // uint8_t currentCell_x = (uint8_t) ((*pos_BT).x/MS_GRID_RES);
+        //     // uint8_t currentCell_y = (uint8_t) ((*pos_BT).y/MS_GRID_RES);
+        //     float dist = 5;
+
+        //     /* Find distance to nearst other UAV */
+        //     for(uint8_t i=0;i < MS_SWARM_SIZE;i++){
+        //         if (i != MS_CURRENT_ID) {
+        //             float tempDist = ((*pos_BT).x-msParams.uavs[i].x)*((*pos_BT).x-msParams.uavs[i].x)+((*pos_BT).y-msParams.uavs[i].y)*((*pos_BT).y-msParams.uavs[i].y);
+        //             if (tempDist < dist) {
+        //                 dist = tempDist;
+        //             }
+        //         }
+        //     }
+
+        //     // if ((electrical.vsupply < 11.4*10) && nnParams.depotNotFree == 0) {
+        //     //     /* If Depot is free and fuel is low, go and charge */
+        //     //     float distDepot = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
+        //     //     if (distDepot <= 0.01) {
+        //     //         nnParams.land = TRUE;
+        //     //         nnParams.bt_State = 3;
+        //     //     }else {
+        //     //         // homing(MS_DEPOT_X,MS_DEPOT_Y);
+        //     //         homing(3.5,3.5);
+        //     //         nnParams.bt_State = 2;
+        //     //     }
+        //     //     nnParams.depotNotFree = 1;
+        //     //     nnParams.avoid = 0;
+        //     // } else if ((electrical.vsupply < 10.0*10)) {
+        //     //     /* If fuel very low, return to depot */
+        //     //     float distDepot = ((*pos_BT).x-(MS_DEPOT_X))*((*pos_BT).x-(MS_DEPOT_X))+((*pos_BT).y-(MS_DEPOT_Y+1))*((*pos_BT).y-(MS_DEPOT_Y+1));
+        //     //     if (distDepot <= 0.01) {
+        //     //         nnParams.land = TRUE;
+        //     //         nnParams.bt_State = 4;
+        //     //     }else {
+        //     //         // homing((MS_DEPOT_X+1),MS_DEPOT_Y);
+        //     //         homing(3.5,3.5);
+        //     //         nnParams.bt_State = 2;
+        //     //     }
+        //     //     nnParams.avoid = 0;
+        //     // } else  if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {
+        //     if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {
+        //         avoid();
+        //         nnParams.depotNotFree = 0;
+        //         nnParams.bt_State = 1;
+        //     } else if (dist < MS_DIST_THRESH_2*MS_DIST_THRESH_2 && nnParams.avoid > 0) {   
+        //         avoid();
+        //         nnParams.depotNotFree = 0;
+        //         nnParams.bt_State = 1;
+        //     } else {
+        //         /* Default case is surveillance */
                 calcNN();
-            } else if (electrical.bat_low) {
-                if (nnParams.depotFree == FALSE) {
-                    /* If Depot is free and fuel is low, go and charge */
-                    dist = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
-                    if (dist <= 0.01) {
-                        nnParams.land = TRUE;
-                    }else {
-                        homing(MS_DEPOT_X,MS_DEPOT_Y);
-                    }
-                }else if (electrical.bat_critical){
-                    /* If fuel very low, return to depot */
-                    dist = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
-                    if (dist <= 0.01) {
-                        nnParams.land = TRUE;
-                    }else {
-                        homing(MS_DEPOT_X,MS_DEPOT_Y);
-                    }
-                }
-            } else {
-                /* Default case is surveillance */
-                calcNN();
-            }
+        //         nnParams.depotNotFree = 0;
+        //         nnParams.avoid = 0;
+        //         nnParams.bt_State = 5;
+        //     }
         }
         else{
             //Return to the centre of the MS 
-            homing(MS_DEPOT_X,MS_DEPOT_Y);
+            homing(3.5,3.5);
             nnParams.avoid = FALSE;
         }
+
+        printNode();
     }
 }
+        //OLD BT
+            // if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {
+            //     avoid();
+            //     nnParams.depotNotFree = 0;
+            // } else if (dist > MS_DIST_THRESH_2*MS_DIST_THRESH_2 && nnParams.avoid == 1) {   
+            //     nnParams.avoid = 0;
+            //     calcNN();
+            //     nnParams.depotNotFree = 0;
+            // } else if (electrical.bat_low && nnParams.depotNotFree == 0) {
+            //     /* If Depot is free and fuel is low, go and charge */
+            //     dist = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
+            //     if (dist <= 0.01) {
+            //         nnParams.land = TRUE;
+            //     }else {
+            //         homing(MS_DEPOT_X,MS_DEPOT_Y);
+            //     }
+            //     nnParams.depotNotFree = 1;
+            // }else if (electrical.bat_critical){
+            //     /* If fuel very low, return to depot */
+            //     dist = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
+            //     if (dist <= 0.01) {
+            //         nnParams.land = TRUE;
+            //     }else {
+            //         homing(MS_DEPOT_X,MS_DEPOT_Y);
+            //     }        
+            // } else {
+            //     /* Default case is surveillance */
+            //     calcNN();
+            //     nnParams.depotNotFree = 0;
+            // }

@@ -78,8 +78,9 @@
     <block name="Force Start Engines" strip_button="Takeoff" strip_icon="takeoff.png">
       <call_once fun="guidance_v_set_guided_th(0.2)"/>
         <call_once fun="autopilot_set_motors_on(TRUE)"/>
-        </block>
-        <block name="Hover">
+    </block>
+    <block name="Hover">
+      <call_once fun="printTakeoff()"/>
       <while cond="TRUE">
         <call fun="hoverGuided(1.3)"/>
       </while>
@@ -88,19 +89,21 @@
       <call_once fun="runSurviellance()"/>
       <while cond="TRUE">
       </while>
-<!--       <while cond="TRUE">
-        <call_once fun="calcNN()"/>
-        <while cond="0.25 > stage_time"/>
-      </while> -->
     </block>
-    <block name="circle">
-      <for var="i" from="0" to="80">
-        <call fun="circle()"/>
-        <while cond="0.25 > stage_time"/>
-      </for>
+    <block name="startUWB">
+      <call_once fun="swithToUWB()"/>
+      <while cond="TRUE">
+        <call fun="hoverGuided(1.3)"/>
+      </while>
+    </block>
+    <block name="startCircle">
+      <call_once fun="startCircle()"/>
+      <while cond="TRUE">
+      </while>
     </block>
     <block name="Land" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="runSurviellance()"/>
+      <!-- <call_once fun="startCircle()"/> -->
       <call_once fun="printMS()"/>
       <while cond="TRUE">
         <call fun="goLand()"/>
