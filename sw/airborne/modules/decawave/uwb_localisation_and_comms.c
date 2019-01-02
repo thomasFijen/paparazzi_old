@@ -262,7 +262,7 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
   uint32_t now_ts = get_sys_time_usec();
   
   // -- Call the update function from the UWB GPS code
-  //update_uwb(now_ts, &(dw->gps_dw1000));
+  //update_uwb(now_ts, &(dw->gps_dw1000));  //Uncomment this if using the UWB as the primary GPS structure
 }
 
 /// init arrays from airframe file
@@ -397,16 +397,6 @@ void local_and_comms_periodic(void) {
 
       dw1000.raw_pos.x = X_old_kal[4];
       dw1000.raw_pos.y = X_old_kal[5];
-
-    // if (useUWB == TRUE){
-    //   dw1000.raw_pos.x = X_old_kal[4];
-    //   dw1000.raw_pos.y = X_old_kal[5];
-    // } else {
-    //   // dw1000.raw_pos.x = 2.42;
-    //   // dw1000.raw_pos.y = 3.0;
-    //   dw1000.raw_pos.x = 1.42;
-    //   dw1000.raw_pos.y = 1.0;
-    // }
   
     if (temp == 0) { 
       // apply scale and neutral corrections
@@ -442,6 +432,7 @@ void use_UWB_position(){
 void local_and_comms_report(void) {
   //struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
 
+  // -- Conversion between coordinate frames
   // float a = 0.827559;
   // float b = 0.5613786;
   // float c = -3.903735;
