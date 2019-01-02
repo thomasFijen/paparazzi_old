@@ -73,7 +73,7 @@
 static bool _inProgress = false;
 static uint8_t _varByte = 0;
 static float uk[2] = {0,0};
-static float X_old_kal[6] = {0,0,0,0,2.42,3.0};
+static float X_old_kal[6] = {0,0,0,0,4.8,5.8};
 static float X_new_kal[6] = {0,0,0,0,0,0};
 
 #define UWB_SERIAL_PORT (&((UWB_DW1000_DEV).device))
@@ -170,8 +170,8 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
   if (msgType == UWB_SERIAL_COMM_RANGE)  {
     for (uint8_t i = 0; i < DW1000_NB_ANCHORS; i++) {
       if (dw->anchors[i].id == id) {
-        float norm = float_from_buf(dw->buf+2);
-        if (norm < 20 && norm > -20) { //Outlier Rejection. Ignore ranges that change by more than 2m
+        float norm = float_from_buf(dw->buf+2); //This is now just the range measurement
+        if (norm < 20 && norm > -20 && norm > 0.01 && norm < -0.01) { //Outlier Rejection. Ignore ranges that change by more than 2m
           dw->anchors[i].distance = float_from_buf(dw->buf+2);
           dw->anchors[i].time = get_sys_time_float();
           dw->updated = true;
@@ -194,7 +194,7 @@ static void fill_anchor_Cust(struct DW1000 *dw) {
         }
         else if (msgType == UWB_SERIAL_COMM_Y) {
           states[i].y = float_from_buf(dw->buf+2);
-        } else {
+        } else if (msgType == UWB_SERIAL_COMM_DEPOT) {
           states[i].d = float_from_buf(dw->buf+2);
         }
         break;
@@ -389,19 +389,24 @@ void local_and_comms_periodic(void) {
     X_old_kal[5] = X_new_kal[5];
     
     // uint32_t currentTime = get_sys_time_msec();  
-    // struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+    struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
     
     // printf("%f,%f,%f,%f,",dw1000.anchors[0].distance,dw1000.anchors[1].distance,dw1000.anchors[2].distance,dw1000.anchors[3].distance); //for identification  
-    // printf("%f,%f,%f,%f,%f,%f,%f\n",dw1000.raw_pos.x,dw1000.raw_pos.y,X_old_kal[4],X_old_kal[5],uk[0] ,uk[1],(*pos2).z); //for identification
+    // printf("%f,%f,%f,%f,%f,%f,%f,",dw1000.raw_pos.x,dw1000.raw_pos.y,X_old_kal[4],X_old_kal[5],uk[0] ,uk[1],(*pos2).z); //for identification
     // printf("%f,%f\n",(*pos2).x,(*pos2).y);
 
-    if (useUWB == TRUE){
       dw1000.raw_pos.x = X_old_kal[4];
       dw1000.raw_pos.y = X_old_kal[5];
-    } else {
-      dw1000.raw_pos.x = 2.42;
-      dw1000.raw_pos.y = 3.0;
-    }
+
+    // if (useUWB == TRUE){
+    //   dw1000.raw_pos.x = X_old_kal[4];
+    //   dw1000.raw_pos.y = X_old_kal[5];
+    // } else {
+    //   // dw1000.raw_pos.x = 2.42;
+    //   // dw1000.raw_pos.y = 3.0;
+    //   dw1000.raw_pos.x = 1.42;
+    //   dw1000.raw_pos.y = 1.0;
+    // }
   
     if (temp == 0) { 
       // apply scale and neutral corrections
@@ -416,7 +421,7 @@ void local_and_comms_periodic(void) {
   //}
 
   /* Send position to Arduino over the UART */
-  struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
+  // struct EnuCoor_f *pos2 = stateGetPositionEnu_f();
   sendFloat(UWB_SERIAL_COMM_X, (*pos2).x);
   sendFloat(UWB_SERIAL_COMM_Y, (*pos2).y);
   
@@ -426,7 +431,7 @@ void local_and_comms_periodic(void) {
   sendFloat(UWB_SERIAL_COMM_DEPOT, data_NN[1]);
 }
 
-/* Switches the GPS from fixerd position to UWB */
+/* Switches the GPS from fixed position to UWB */
 void use_UWB_position(){
   useUWB = TRUE;
   dw1000.raw_pos.x = X_old_kal[4];

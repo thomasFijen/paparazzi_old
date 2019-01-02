@@ -51,6 +51,7 @@ static float aveY[5] = {0.f,0.f,0.f,0.f,0.f};
     float temp3[3];
     float x_hat[3];
     float F[4];
+    int didItWork = 0;
 
     while(count < MAXITT && err > TOL)   {
         //x - inv(jacobian * jacobian^T) * jacobian * F
@@ -68,6 +69,9 @@ static float aveY[5] = {0.f,0.f,0.f,0.f,0.f};
         x0[1] = x_hat[1];
         x0[2] = x_hat[2];
         count++;
+    }
+    if(count == MAXITT){
+        didItWork = -1;
     }
 
     //--Outlier rejection:
@@ -118,7 +122,7 @@ static float aveY[5] = {0.f,0.f,0.f,0.f,0.f};
     pos->y = y;
     pos->z = x_hat[2];
 
-    return 0;
+    return didItWork;
 }
 
  /*

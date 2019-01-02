@@ -77,19 +77,19 @@
 #endif
 
 #ifndef MS_DIST_THRESH
-#define MS_DIST_THRESH 0.8
+#define MS_DIST_THRESH 0.9
 #endif
 
 #ifndef MS_DIST_THRESH_2
-#define MS_DIST_THRESH_2 1.0
+#define MS_DIST_THRESH_2 1.2
 #endif
 
 #ifndef MS_DEPOT_X
-#define MS_DEPOT_X 7.0
+#define MS_DEPOT_X 1.0
 #endif
 
 #ifndef MS_DEPOT_Y
-#define MS_DEPOT_Y 0.5
+#define MS_DEPOT_Y 1.0
 #endif
 
 #ifndef MS_NUM_INPUTS
@@ -161,28 +161,33 @@ void calcInputs(){
     */
 
     /* Conversion between coordinate systems */
-    float a = 0.827559;
-    float b = 0.5613786;
-    float c = -3.903735;
-    float d = 1.0823;
+    // float a = 0.827559;
+    // float b = 0.5613786;
+    // float c = -3.903735;
+    // float d = 1.0823;
 
-    struct EnuCoor_f *pos = stateGetPositionEnu_f();
-    float tempX=(*pos).x;
-    float tempY=(*pos).y;
-    (*pos).x = a*tempX+b*tempY+c;
-    (*pos).y = -b*tempX+a*tempY+d;
+    // struct EnuCoor_f *pos_CalcIn = stateGetPositionEnu_f();
+    // float tempX=(*pos_CalcIn).x;
+    // float tempY=(*pos_CalcIn).y;
+    // (*pos_CalcIn).x = a*tempX+b*tempY+c;
+    // (*pos_CalcIn).y = -b*tempX+a*tempY+d;
 
-    for(uint8_t i=0;i<MS_SWARM_SIZE;i++){
-        float temp[3];
-        getPos_UWB((i+2),temp);             //!!!!!!!!!!!!!!!! MAGIC NUMBER: BEWARE!!!!!!
-        nnParams.depotNotFree = temp[2];
+    struct EnuCoor_f *pos_CalcIn = stateGetPositionEnu_f();
+    (*pos_CalcIn).x=msParams.uavs[MS_CURRENT_ID].x;
+    (*pos_CalcIn).y=msParams.uavs[MS_CURRENT_ID].y;
+    // printf("\nCalc In: %f,%f",(*pos_CalcIn).x,(*pos_CalcIn).y);
 
-        msParams.uavs[i].x = temp[0];
-        msParams.uavs[i].y = temp[1];
+    // for(uint8_t i=0;i<MS_SWARM_SIZE;i++){
+    //     float temp[3];
+    //     getPos_UWB((i+2),temp);             //!!!!!!!!!!!!!!!! MAGIC NUMBER: BEWARE!!!!!!
+    //     nnParams.depotNotFree = temp[2];
 
-        msParams.uavs[i].x = a*temp[0]+b*temp[1]+c;
-        msParams.uavs[i].y = -b*temp[0]+a*temp[1]+d;
-    }
+    //     msParams.uavs[i].x = temp[0];
+    //     msParams.uavs[i].y = temp[1];
+
+    //     msParams.uavs[i].x = a*temp[0]+b*temp[1]+c;
+    //     msParams.uavs[i].y = -b*temp[0]+a*temp[1]+d;
+    // }
     
     /* Default range values */
     for (uint8_t i = 0; i < MS_NUM_INPUTS; i++) {
@@ -191,18 +196,18 @@ void calcInputs(){
 
     uint8_t currentCell_x;
     uint8_t currentCell_y;
-    if ((*pos).x >= 0 && (*pos).x <= MS_LENGTH && (*pos).y >= 0 && (*pos).y <= MS_BREDTH) {
+    if ((*pos_CalcIn).x >= 0 && (*pos_CalcIn).x <= MS_LENGTH && (*pos_CalcIn).y >= 0 && (*pos_CalcIn).y <= MS_BREDTH) {
         /* Get current cell index */
-        currentCell_x = (uint8_t) ((*pos).x/MS_GRID_RES);
-        currentCell_y = (uint8_t) ((*pos).y/MS_GRID_RES);
+        currentCell_x = (uint8_t) ((*pos_CalcIn).x/MS_GRID_RES);
+        currentCell_y = (uint8_t) ((*pos_CalcIn).y/MS_GRID_RES);
 
         /* Antennae Function values */
         uint8_t numCells = msParams.sensorRange / MS_GRID_RES;
 
-        nnParams.node_out[0] = MS_GRID_RES*(currentCell_y+1)-(*pos).y;
+        nnParams.node_out[0] = MS_GRID_RES*(currentCell_y+1)-(*pos_CalcIn).y;
         nnParams.node_out[8] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for (uint8_t i = 1; i <= numCells; i++) {
-            if (((*pos).y+i*MS_GRID_RES) > MS_BREDTH) {
+            if (((*pos_CalcIn).y+i*MS_GRID_RES) > MS_BREDTH) {
                 break;
             }
             else if(msParams.MS[currentCell_y+i][currentCell_x] != 0) {
@@ -218,10 +223,10 @@ void calcInputs(){
             }
         }
 
-        nnParams.node_out[2] = MS_GRID_RES*(currentCell_x+1)-(*pos).x;
+        nnParams.node_out[2] = MS_GRID_RES*(currentCell_x+1)-(*pos_CalcIn).x;
         nnParams.node_out[10] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for (uint8_t i = 1; i <= numCells; i++) {
-            if (((*pos).x+i*MS_GRID_RES) > MS_LENGTH) {
+            if (((*pos_CalcIn).x+i*MS_GRID_RES) > MS_LENGTH) {
                 break;
             }
             else if(msParams.MS[currentCell_y][currentCell_x+i] != 0) {
@@ -237,10 +242,10 @@ void calcInputs(){
             }
         }
 
-        nnParams.node_out[4] = (*pos).y - MS_GRID_RES*(currentCell_y);
+        nnParams.node_out[4] = (*pos_CalcIn).y - MS_GRID_RES*(currentCell_y);
         nnParams.node_out[12] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for (uint8_t i = 1; i <= numCells; i++) {
-            if (((*pos).y-i*MS_GRID_RES) < 0) {
+            if (((*pos_CalcIn).y-i*MS_GRID_RES) < 0) {
                 break;
             }
             else if(msParams.MS[currentCell_y-i][currentCell_x] != 0) {
@@ -256,10 +261,10 @@ void calcInputs(){
             }
         }
 
-        nnParams.node_out[6] = (*pos).x-MS_GRID_RES*(currentCell_x);
+        nnParams.node_out[6] = (*pos_CalcIn).x-MS_GRID_RES*(currentCell_x);
         nnParams.node_out[14] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for (uint8_t i = 1; i <= numCells; i++) {
-            if (((*pos).x-i*MS_GRID_RES) < 0) {
+            if (((*pos_CalcIn).x-i*MS_GRID_RES) < 0) {
                 break;
             }
             else if(msParams.MS[currentCell_y][currentCell_x-i] != 0) {
@@ -278,10 +283,10 @@ void calcInputs(){
         /* Diagonal antennae */
         float stepSize = MS_GRID_RES/cosf(PI/4);
 
-        nnParams.node_out[1] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x+1))*((*pos).x-MS_GRID_RES*(currentCell_x+1))+((*pos).y-MS_GRID_RES*(currentCell_y+1))*((*pos).y-MS_GRID_RES*(currentCell_y+1)));
+        nnParams.node_out[1] = sqrtf(((*pos_CalcIn).x-MS_GRID_RES*(currentCell_x+1))*((*pos_CalcIn).x-MS_GRID_RES*(currentCell_x+1))+((*pos_CalcIn).y-MS_GRID_RES*(currentCell_y+1))*((*pos_CalcIn).y-MS_GRID_RES*(currentCell_y+1)));
         nnParams.node_out[9] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for(uint8_t i = 1; i <= numCells; i++) {
-            if (((*pos).y+i*MS_GRID_RES) > MS_BREDTH || ((*pos).x+i*MS_GRID_RES) > MS_LENGTH) {
+            if (((*pos_CalcIn).y+i*MS_GRID_RES) > MS_BREDTH || ((*pos_CalcIn).x+i*MS_GRID_RES) > MS_LENGTH) {
                 break;
             }
             else if(msParams.MS[currentCell_y+i][currentCell_x+i] != 0) {
@@ -297,11 +302,11 @@ void calcInputs(){
             }
         }
 
-        nnParams.node_out[3] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x+1))*((*pos).x-MS_GRID_RES*(currentCell_x+1))+((*pos).y-MS_GRID_RES*(currentCell_y))*((*pos).y-MS_GRID_RES*(currentCell_y)));
+        nnParams.node_out[3] = sqrtf(((*pos_CalcIn).x-MS_GRID_RES*(currentCell_x+1))*((*pos_CalcIn).x-MS_GRID_RES*(currentCell_x+1))+((*pos_CalcIn).y-MS_GRID_RES*(currentCell_y))*((*pos_CalcIn).y-MS_GRID_RES*(currentCell_y)));
         // nnParams.node_out[3] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x+1))*((*pos).x-MS_GRID_RES*(currentCell_x+1))+((*pos).y-MS_GRID_RES*(currentCell_y))*((*pos).y-MS_GRID_RES*(currentCell_y)));
         nnParams.node_out[11] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for(uint8_t i = 1; i <= numCells; i++) {
-            if (((*pos).y-i*MS_GRID_RES) < 0 || ((*pos).x+i*MS_GRID_RES) > MS_BREDTH) {
+            if (((*pos_CalcIn).y-i*MS_GRID_RES) < 0 || ((*pos_CalcIn).x+i*MS_GRID_RES) > MS_BREDTH) {
                 break;
             }
             else if(msParams.MS[currentCell_y-i][currentCell_x+i] != 0) {
@@ -317,10 +322,10 @@ void calcInputs(){
             }
         }
 
-        nnParams.node_out[5] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x))*((*pos).x-MS_GRID_RES*(currentCell_x))+((*pos).y-MS_GRID_RES*(currentCell_y))*((*pos).y-MS_GRID_RES*(currentCell_y)));
+        nnParams.node_out[5] = sqrtf(((*pos_CalcIn).x-MS_GRID_RES*(currentCell_x))*((*pos_CalcIn).x-MS_GRID_RES*(currentCell_x))+((*pos_CalcIn).y-MS_GRID_RES*(currentCell_y))*((*pos_CalcIn).y-MS_GRID_RES*(currentCell_y)));
         nnParams.node_out[13] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for(uint8_t i = 1; i <= numCells; i++) {
-            if (((*pos).y-i*MS_GRID_RES) < 0 || ((*pos).x-i*MS_GRID_RES) < 0) {
+            if (((*pos_CalcIn).y-i*MS_GRID_RES) < 0 || ((*pos_CalcIn).x-i*MS_GRID_RES) < 0) {
                 break;
             }
             else if(msParams.MS[currentCell_y-i][currentCell_x-i] != 0) {
@@ -336,10 +341,10 @@ void calcInputs(){
             }
         }
 
-        nnParams.node_out[7] = sqrtf(((*pos).x-MS_GRID_RES*(currentCell_x))*((*pos).x-MS_GRID_RES*(currentCell_x))+((*pos).y-MS_GRID_RES*(currentCell_y+1))*((*pos).y-MS_GRID_RES*(currentCell_y+1)));
+        nnParams.node_out[7] = sqrtf(((*pos_CalcIn).x-MS_GRID_RES*(currentCell_x))*((*pos_CalcIn).x-MS_GRID_RES*(currentCell_x))+((*pos_CalcIn).y-MS_GRID_RES*(currentCell_y+1))*((*pos_CalcIn).y-MS_GRID_RES*(currentCell_y+1)));
         nnParams.node_out[15] = (100-msParams.MS[currentCell_y][currentCell_x])/100.0;
         for(uint8_t i = 1; i <= numCells; i++) {
-            if (((*pos).y+i*MS_GRID_RES) > MS_BREDTH || ((*pos).x-i*MS_GRID_RES) < 0) {
+            if (((*pos_CalcIn).y+i*MS_GRID_RES) > MS_BREDTH || ((*pos_CalcIn).x-i*MS_GRID_RES) < 0) {
                 break;
             }
             else if(msParams.MS[currentCell_y+i][currentCell_x-i] != 0) {
@@ -362,7 +367,7 @@ void calcInputs(){
                     uint8_t agentCell_x = (uint8_t) (msParams.uavs[i].x/MS_GRID_RES);
                     uint8_t agentCell_y = (uint8_t) (msParams.uavs[i].y/MS_GRID_RES);
                     if(agentCell_x == currentCell_x){
-                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos_CalcIn).x)*(msParams.uavs[i].x-(*pos_CalcIn).x)+(msParams.uavs[i].y-(*pos_CalcIn).y)*(msParams.uavs[i].y-(*pos_CalcIn).y));
                         if(agentCell_y >= currentCell_y && distance < nnParams.node_out[0]){
                             nnParams.node_out[0] = distance;
                             nnParams.node_out[8] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
@@ -372,7 +377,7 @@ void calcInputs(){
                         }
                     }
                     else if (agentCell_y == currentCell_y){
-                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos_CalcIn).x)*(msParams.uavs[i].x-(*pos_CalcIn).x)+(msParams.uavs[i].y-(*pos_CalcIn).y)*(msParams.uavs[i].y-(*pos_CalcIn).y));
                         if(agentCell_x >= currentCell_x && distance < nnParams.node_out[2]){
                             nnParams.node_out[2] = distance;
                             nnParams.node_out[10] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
@@ -382,25 +387,25 @@ void calcInputs(){
                         }
                     }
                     else if ((agentCell_y-currentCell_y) == (agentCell_x-currentCell_x) && agentCell_x >= currentCell_x ) {
-                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos_CalcIn).x)*(msParams.uavs[i].x-(*pos_CalcIn).x)+(msParams.uavs[i].y-(*pos_CalcIn).y)*(msParams.uavs[i].y-(*pos_CalcIn).y));
                         if(distance < nnParams.node_out[1]){
                             nnParams.node_out[1] = distance;
                             nnParams.node_out[9] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
                         }
                     } else if ((currentCell_y-agentCell_y) == (agentCell_x-currentCell_x) && agentCell_x >= currentCell_x){
-                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos_CalcIn).x)*(msParams.uavs[i].x-(*pos_CalcIn).x)+(msParams.uavs[i].y-(*pos_CalcIn).y)*(msParams.uavs[i].y-(*pos_CalcIn).y));
                         if(distance < nnParams.node_out[3]){
                             nnParams.node_out[3] = distance;
                             nnParams.node_out[11] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
                         }
                     } else if ((currentCell_y-agentCell_y) == (currentCell_x-agentCell_x) && agentCell_x < currentCell_x) {
-                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos_CalcIn).x)*(msParams.uavs[i].x-(*pos_CalcIn).x)+(msParams.uavs[i].y-(*pos_CalcIn).y)*(msParams.uavs[i].y-(*pos_CalcIn).y));
                         if(distance < nnParams.node_out[5]){
                             nnParams.node_out[5] = distance;
                             nnParams.node_out[13] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
                         }
                     } else if ((agentCell_y-currentCell_y) == (currentCell_x-agentCell_x) && agentCell_x < currentCell_x) {
-                        float distance = sqrtf((msParams.uavs[i].x-(*pos).x)*(msParams.uavs[i].x-(*pos).x)+(msParams.uavs[i].y-(*pos).y)*(msParams.uavs[i].y-(*pos).y));
+                        float distance = sqrtf((msParams.uavs[i].x-(*pos_CalcIn).x)*(msParams.uavs[i].x-(*pos_CalcIn).x)+(msParams.uavs[i].y-(*pos_CalcIn).y)*(msParams.uavs[i].y-(*pos_CalcIn).y));
                         if(distance < nnParams.node_out[7]){
                             nnParams.node_out[7] = distance;
                             nnParams.node_out[15] = (100-msParams.MS[agentCell_y][agentCell_x])/100.0;
@@ -419,30 +424,30 @@ void calcInputs(){
             nnParams.node_out[i] = 0;
         }
 
-        if ((*pos).x < 0) { 
-            if ((*pos).y < 0) {
+        if ((*pos_CalcIn).x < 0) { 
+            if ((*pos_CalcIn).y < 0) {
                 nnParams.node_out[1] = msParams.sensorRange;
                 nnParams.node_out[9] = 1.0;
-            }else if ((*pos).y >= 0 && (*pos).y <= MS_BREDTH) {
+            }else if ((*pos_CalcIn).y >= 0 && (*pos_CalcIn).y <= MS_BREDTH) {
                 nnParams.node_out[2] = msParams.sensorRange;
                 nnParams.node_out[10] = 1.0;
             }else {
                 nnParams.node_out[3] = msParams.sensorRange;
                 nnParams.node_out[11] = 1.0;
             }
-        }else if ((*pos).x >=0 && (*pos).x <= MS_LENGTH){ 
-            if ((*pos).y < 0) { 
+        }else if ((*pos_CalcIn).x >=0 && (*pos_CalcIn).x <= MS_LENGTH){ 
+            if ((*pos_CalcIn).y < 0) { 
                 nnParams.node_out[0] = msParams.sensorRange;
                 nnParams.node_out[8] = 1.0;
-            }else if ((*pos).y > MS_BREDTH) { 
+            }else if ((*pos_CalcIn).y > MS_BREDTH) { 
                 nnParams.node_out[4] = msParams.sensorRange;
                 nnParams.node_out[12] = 1.0;
             }
         }else { 
-            if ((*pos).y < 0) { 
+            if ((*pos_CalcIn).y < 0) { 
                 nnParams.node_out[7] = msParams.sensorRange;
                 nnParams.node_out[15] = 1.0;
-            }else if ((*pos).y >= 0 && (*pos).y <= MS_BREDTH) { 
+            }else if ((*pos_CalcIn).y >= 0 && (*pos_CalcIn).y <= MS_BREDTH) { 
                 nnParams.node_out[6] = msParams.sensorRange;
                 nnParams.node_out[14] = 1.0;
             }else {
@@ -606,7 +611,7 @@ void calcNN() {
         commandSpeed(u_command);
 
         //nnParams.currentTime = get_sys_time_usec()-nnParams.currentTime;
-        printNode(); //This is for debugging 
+        // printNode(); //This is for debugging 
         // return 0;
     }
 }
@@ -637,17 +642,18 @@ void ageMS(void){
         float loopX = 0;    //stores the position of the current UAV being tested. Just for convenience 
         float loopY = 0;
         if(agentNum == MS_CURRENT_ID){
-            struct EnuCoor_f *pos = stateGetPositionEnu_f();
-            float tempX=(*pos).x;
-            float tempY=(*pos).y;
-            (*pos).x = a*tempX+b*tempY+c;
-            (*pos).y = -b*tempX+a*tempY+d;
+            struct EnuCoor_f *pos_Age = stateGetPositionEnu_f();
+            float tempX=(*pos_Age).x;
+            float tempY=(*pos_Age).y;
+            (*pos_Age).x = a*tempX+b*tempY+c;
+            (*pos_Age).y = -b*tempX+a*tempY+d;
+            // printf("\nAGE: %f,%f",(*pos_Age).x,(*pos_Age).y);
 
-            if ((*pos).x >= 0 && (*pos).x <= MS_LENGTH && (*pos).y >= 0 && (*pos).y <= MS_BREDTH) {
-                currentCell_x = (uint8_t) ((*pos).x/MS_GRID_RES);
-                currentCell_y = (uint8_t) ((*pos).y/MS_GRID_RES);
-                loopX = (*pos).x;
-                loopY = (*pos).y;
+            if ((*pos_Age).x >= 0 && (*pos_Age).x <= MS_LENGTH && (*pos_Age).y >= 0 && (*pos_Age).y <= MS_BREDTH) {
+                currentCell_x = (uint8_t) ((*pos_Age).x/MS_GRID_RES);
+                currentCell_y = (uint8_t) ((*pos_Age).y/MS_GRID_RES);
+                loopX = (*pos_Age).x;
+                loopY = (*pos_Age).y;
             }
         }
         else{
@@ -723,10 +729,10 @@ void neural_network_init(void) {
             }
         }
     }
-    // msParams.MS[2][12] = 0;
-    // msParams.MS[2][11] = 0;
-    // msParams.MS[3][11] = 0;
-    // msParams.MS[3][12] = 0;
+    msParams.MS[2][2] = 0;
+    msParams.MS[2][3] = 0;
+    msParams.MS[3][3] = 0;
+    msParams.MS[3][2] = 0;
 
     msParams.sensorRange = MS_SENSOR_RANGE;
     /* Starting positions of the Drones */
@@ -1498,16 +1504,16 @@ bool printMS(){
 void printNode(){
     // x1,y1,x2,y2,node1,node2,...,node18,outNode1,outNode2.
         /* Conversion between coordinate systems */
-    float a = 0.827559;
-    float b = 0.5613786;
-    float c = -3.903735;
-    float d = 1.0823;
+    // float a = 0.827559;
+    // float b = 0.5613786;
+    // float c = -3.903735;
+    // float d = 1.0823;
 
-    struct EnuCoor_f *pos = stateGetPositionEnu_f();
-    float tempX=(*pos).x;
-    float tempY=(*pos).y;
-    (*pos).x = a*tempX+b*tempY+c;
-    (*pos).y = -b*tempX+a*tempY+d;
+    struct EnuCoor_f *pos_print = stateGetPositionEnu_f();
+    // float tempX=(*pos_print).x;
+    // float tempY=(*pos_print).y;
+    // (*pos_print).x = a*tempX+b*tempY+c;
+    // (*pos_print).y = -b*tempX+a*tempY+d;
     // float printX = a*tempX+b*tempY+c;;
     // float printY = -b*tempX+a*tempY+d;
 
@@ -1516,8 +1522,8 @@ void printNode(){
 
 
 
-    printf("\n%f,%f,%f,%f,%f, %f",(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y,nnParams.depotNotFree,nnParams.bt_State);
-    // printf("\n%f,%f,%f,%f,%f,%f",(*pos).x,(*pos).y,msParams.uavs[1].x,msParams.uavs[1].y,msParams.uavs[2].x,msParams.uavs[2].y);
+    // printf("\n%f,%f,%f,%f,%f,%f",msParams.uavs[0].x,msParams.uavs[0].y,msParams.uavs[1].x,msParams.uavs[1].y,nnParams.depotNotFree,nnParams.bt_State);
+    printf("\n%f,%f,%f,%f,%f,%f",msParams.uavs[0].x,msParams.uavs[0].y,msParams.uavs[1].x,msParams.uavs[1].y,msParams.uavs[2].x,msParams.uavs[2].y);
 
     // for (uint8_t i =0; i < 18;i++){
     //     printf(",%f",nnParams.node_out[i]);
@@ -1543,7 +1549,7 @@ void homing(float xPos, float yPos){
         }
         
     } else {
-        if (MS_DEPOT_Y > msParams.uavs[MS_CURRENT_ID].y) {
+        if (yPos > msParams.uavs[MS_CURRENT_ID].y) {
             theta = 1.5*PI+fabs(atanf((yPos-msParams.uavs[MS_CURRENT_ID].y)/(xPos-msParams.uavs[MS_CURRENT_ID].x)));
         }
         else {
@@ -1706,6 +1712,7 @@ void behaviourTree(){
         (*pos_BT).y = -b*tempX+a*tempY+d;
         msParams.uavs[MS_CURRENT_ID].x = (*pos_BT).x;
         msParams.uavs[MS_CURRENT_ID].y = (*pos_BT).y;
+        // printf("\nBT: %f,%f,%f,%f",(*pos_BT).x,(*pos_BT).y,msParams.uavs[1].x,msParams.uavs[1].y);
 
         // nnParams.depotNotFree = 1;
 
@@ -1730,59 +1737,59 @@ void behaviourTree(){
         if ((*pos_BT).x <= MS_LENGTH && (*pos_BT).x >= 0 && (*pos_BT).y <= MS_BREDTH && (*pos_BT).y >= 0) {
         //     // uint8_t currentCell_x = (uint8_t) ((*pos_BT).x/MS_GRID_RES);
         //     // uint8_t currentCell_y = (uint8_t) ((*pos_BT).y/MS_GRID_RES);
-        //     float dist = 5;
+            float dist = 5;
 
-        //     /* Find distance to nearst other UAV */
-        //     for(uint8_t i=0;i < MS_SWARM_SIZE;i++){
-        //         if (i != MS_CURRENT_ID) {
-        //             float tempDist = ((*pos_BT).x-msParams.uavs[i].x)*((*pos_BT).x-msParams.uavs[i].x)+((*pos_BT).y-msParams.uavs[i].y)*((*pos_BT).y-msParams.uavs[i].y);
-        //             if (tempDist < dist) {
-        //                 dist = tempDist;
-        //             }
-        //         }
-        //     }
+            /* Find distance to nearst other UAV */
+            for(uint8_t i=0;i < MS_SWARM_SIZE;i++){
+                if (i != MS_CURRENT_ID) {
+                    float tempDist = ((*pos_BT).x-msParams.uavs[i].x)*((*pos_BT).x-msParams.uavs[i].x)+((*pos_BT).y-msParams.uavs[i].y)*((*pos_BT).y-msParams.uavs[i].y);
+                    if (tempDist < dist) {
+                        dist = tempDist;
+                    }
+                }
+            }
 
-        //     // if ((electrical.vsupply < 11.4*10) && nnParams.depotNotFree == 0) {
-        //     //     /* If Depot is free and fuel is low, go and charge */
-        //     //     float distDepot = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
-        //     //     if (distDepot <= 0.01) {
-        //     //         nnParams.land = TRUE;
-        //     //         nnParams.bt_State = 3;
-        //     //     }else {
-        //     //         // homing(MS_DEPOT_X,MS_DEPOT_Y);
-        //     //         homing(3.5,3.5);
-        //     //         nnParams.bt_State = 2;
-        //     //     }
-        //     //     nnParams.depotNotFree = 1;
-        //     //     nnParams.avoid = 0;
-        //     // } else if ((electrical.vsupply < 10.0*10)) {
-        //     //     /* If fuel very low, return to depot */
-        //     //     float distDepot = ((*pos_BT).x-(MS_DEPOT_X))*((*pos_BT).x-(MS_DEPOT_X))+((*pos_BT).y-(MS_DEPOT_Y+1))*((*pos_BT).y-(MS_DEPOT_Y+1));
-        //     //     if (distDepot <= 0.01) {
-        //     //         nnParams.land = TRUE;
-        //     //         nnParams.bt_State = 4;
-        //     //     }else {
-        //     //         // homing((MS_DEPOT_X+1),MS_DEPOT_Y);
-        //     //         homing(3.5,3.5);
-        //     //         nnParams.bt_State = 2;
-        //     //     }
-        //     //     nnParams.avoid = 0;
-        //     // } else  if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {
-        //     if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {
-        //         avoid();
-        //         nnParams.depotNotFree = 0;
-        //         nnParams.bt_State = 1;
-        //     } else if (dist < MS_DIST_THRESH_2*MS_DIST_THRESH_2 && nnParams.avoid > 0) {   
-        //         avoid();
-        //         nnParams.depotNotFree = 0;
-        //         nnParams.bt_State = 1;
-        //     } else {
-        //         /* Default case is surveillance */
+            // if ((electrical.vsupply < 11.4*10) && nnParams.depotNotFree == 0) {
+            //     /* If Depot is free and fuel is low, go and charge */
+            //     float distDepot = ((*pos_BT).x-MS_DEPOT_X)*((*pos_BT).x-MS_DEPOT_X)+((*pos_BT).y-MS_DEPOT_Y)*((*pos_BT).y-MS_DEPOT_Y);
+            //     if (distDepot <= 0.01) {
+            //         nnParams.land = TRUE;
+            //         nnParams.bt_State = 3;
+            //     }else {
+            //         homing(MS_DEPOT_X,MS_DEPOT_Y);
+            //         // homing(3.5,3.5);
+            //         nnParams.bt_State = 2;
+            //     }
+            //     nnParams.depotNotFree = 1;
+            //     nnParams.avoid = 0;
+            // } else if ((electrical.vsupply < 10.5*10)) {
+            //     /* If fuel very low, return to depot */
+            //     float distDepot = ((*pos_BT).x-(MS_DEPOT_X+MS_CURRENT_ID))*((*pos_BT).x-(MS_DEPOT_X+MS_CURRENT_ID))+((*pos_BT).y-(MS_DEPOT_Y))*((*pos_BT).y-(MS_DEPOT_Y));
+            //     if (distDepot <= 0.01) {
+            //         nnParams.land = TRUE;
+            //         nnParams.bt_State = 4;
+            //     }else {
+            //         homing((MS_DEPOT_X+MS_CURRENT_ID),MS_DEPOT_Y);
+            //         // homing(3.5,3.5);
+            //         nnParams.bt_State = 2;
+            //     }
+            //     nnParams.avoid = 0;
+            // } else  if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {
+            if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {
+                avoid();
+                nnParams.depotNotFree = 0;
+                nnParams.bt_State = 1;
+            } else if (dist < MS_DIST_THRESH_2*MS_DIST_THRESH_2 && nnParams.avoid > 0) {   
+                avoid();
+                nnParams.depotNotFree = 0;
+                nnParams.bt_State = 1;
+            } else {
+                /* Default case is surveillance */
                 calcNN();
-        //         nnParams.depotNotFree = 0;
-        //         nnParams.avoid = 0;
-        //         nnParams.bt_State = 5;
-        //     }
+                nnParams.depotNotFree = 0;
+                nnParams.avoid = 0;
+                nnParams.bt_State = 5;
+            }
         }
         else{
             //Return to the centre of the MS 
@@ -1790,8 +1797,9 @@ void behaviourTree(){
             nnParams.avoid = FALSE;
         }
 
-        printNode();
+       printNode(); 
     }
+    
 }
         //OLD BT
             // if (dist < MS_DIST_THRESH*MS_DIST_THRESH) {

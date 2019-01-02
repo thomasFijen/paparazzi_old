@@ -124,7 +124,9 @@ void swithToUWB(){
   use_UWB_position();
   
   /* Reset the current reference position x,y. Needed for UWB */
-  struct EnuCoor_f *pos2 = stateGetPositionNed_i();
+  // VECT2_COPY(guidance_h.ref.pos, *stateGetPositionNed_i());
+  
+  struct NedCoor_i *pos2 = stateGetPositionNed_i();
   struct Int32Vect2 posSettingRef;
   struct Int32Vect2 speed;
   struct Int32Vect2 accel;

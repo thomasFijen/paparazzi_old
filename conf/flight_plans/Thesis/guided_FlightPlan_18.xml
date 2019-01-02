@@ -82,7 +82,7 @@
     <block name="Hover">
       <call_once fun="printTakeoff()"/>
       <while cond="TRUE">
-        <call fun="hoverGuided(1.3)"/>
+        <call fun="hoverGuided(1.1)"/>
       </while>
     </block>
     <block name="Survey">
@@ -90,12 +90,12 @@
       <while cond="TRUE">
       </while>
     </block>
-    <block name="startUWB">
+    <!-- <block name="startUWB">
       <call_once fun="swithToUWB()"/>
       <while cond="TRUE">
         <call fun="hoverGuided(1.3)"/>
       </while>
-    </block>
+    </block> -->
     <block name="startCircle">
       <call_once fun="startCircle()"/>
       <while cond="TRUE">
